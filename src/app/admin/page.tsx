@@ -39,7 +39,6 @@ export default function AdminPage() {
 
       const from = (page - 1) * pageSize;
       const to = from + pageSize - 1;
-
       const { data, error, count } = await supabase
         .from("products")
         .select(
