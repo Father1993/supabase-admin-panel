@@ -1,26 +1,65 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+    --background: #ffffff;
+    --foreground: #171717;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --font-sans: var(--font-geist-sans);
+    --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+    :root {
+        --background: #0a0a0a;
+        --foreground: #ededed;
+    }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Простые стили для HTML контента описаний */
+.rich-html {
+    line-height: 1.6;
+    color: #111827; /* text-gray-900 */
+}
+.rich-html h1,
+.rich-html h2,
+.rich-html h3 {
+    font-weight: 600;
+    margin: 0.75rem 0 0.5rem;
+}
+.rich-html p {
+    margin: 0.5rem 0;
+}
+.rich-html ul,
+.rich-html ol {
+    padding-left: 1.25rem;
+    margin: 0.5rem 0;
+}
+.rich-html a {
+    color: #2563eb;
+    text-decoration: underline;
+}
+.rich-html img {
+    max-width: 100%;
+    height: auto;
+}
+.rich-html table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.75rem 0;
+}
+.rich-html th,
+.rich-html td {
+    border: 1px solid #e5e7eb;
+    padding: 0.5rem;
+    vertical-align: top;
 }
