@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { SafeHtml } from "@/components/SafeHtml";
 import Link from "next/link";
+import DOMPurify from "isomorphic-dompurify";
 
 type Row = {
 	id: string | number;
@@ -14,6 +15,8 @@ type Row = {
 	description?: string | null;
 	description_added?: boolean | null;
 	push_to_pim?: boolean | null;
+	description_confirmed?: boolean | null;
+	confirmed_by_email?: string | null;
 };
 
 export default function AdminPage() {
@@ -23,6 +26,14 @@ export default function AdminPage() {
   const pageSize = 50;
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
+
+  const [editorState, setEditorState] = useState<{
+    open: boolean;
+    rowId: string | number | null;
+    field: "short_description" | "description" | null;
+    initialHtml: string;
+  }>({ open: false, rowId: null, field: null, initialHtml: "" });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -33,6 +44,7 @@ export default function AdminPage() {
         window.location.href = "/login";
         return;
       }
+      setCurrentUserEmail(user.email ?? null);
 
       setLoading(true);
       setError(null);
@@ -42,7 +54,7 @@ export default function AdminPage() {
       const { data, error, count } = await supabase
         .from("products")
         .select(
-          "row_number, id, uid, product_name, short_description, description, description_added, push_to_pim",
+          "row_number, id, uid, product_name, short_description, description, description_added, push_to_pim, description_confirmed, confirmed_by_email",
           { count: "exact" }
         )
         .eq("description_added", true)
@@ -67,6 +79,55 @@ export default function AdminPage() {
     window.location.href = "/login";
   }
 
+  function openEditor(row: Row, field: "short_description" | "description") {
+    setEditorState({
+      open: true,
+      rowId: row.id,
+      field,
+      initialHtml: String(row[field] ?? ""),
+    });
+  }
+
+  async function saveEditor(html: string) {
+    if (!editorState.open || !editorState.field || editorState.rowId == null) return;
+    const sanitized = DOMPurify.sanitize(html, { USE_PROFILES: { html: true } });
+    const fieldName = editorState.field;
+    const { data, error } = await supabase
+      .from("products")
+      .update({ [fieldName]: sanitized })
+      .eq("id", editorState.rowId)
+      .select("id, short_description, description");
+    if (error) {
+      alert(`Ошибка сохранения: ${error.message}`);
+      return;
+    }
+    const updated = data?.[0];
+    if (updated) {
+      setRows((prev) => prev.map((r) => (r.id === updated.id ? { ...r, ...updated } : r)));
+    }
+    setEditorState({ open: false, rowId: null, field: null, initialHtml: "" });
+  }
+
+  async function confirmDescription(row: Row) {
+    if (!currentUserEmail) {
+      alert("Нет email пользователя. Авторизуйтесь заново.");
+      return;
+    }
+    const { data, error } = await supabase
+      .from("products")
+      .update({ description_confirmed: true, confirmed_by_email: currentUserEmail })
+      .eq("id", row.id)
+      .select("id, description_confirmed, confirmed_by_email");
+    if (error) {
+      alert(`Ошибка подтверждения: ${error.message}`);
+      return;
+    }
+    const updated = data?.[0];
+    if (updated) {
+      setRows((prev) => prev.map((r) => (r.id === updated.id ? { ...r, ...updated } : r)));
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       {/* Шапка */}
@@ -75,7 +136,7 @@ export default function AdminPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                Админка товаров
+                Админка товаров — Уровень
               </h1>
               <p className="text-slate-600 mt-1">Проверка и оценка AI-генерированных описаний</p>
             </div>
@@ -148,7 +209,7 @@ export default function AdminPage() {
                         )}
                         {typeof row.row_number !== "undefined" && row.row_number !== null && (
                           <span className="bg-indigo-100 px-3 py-1 rounded-full">
-                            <span className="text-indigo-600 font-medium">Row #:</span>
+                            <span className="text-indigo-600 font-medium">Порядковый номер #:</span>
                             <span className="text-indigo-800 ml-1">{row.row_number}</span>
                           </span>
                         )}
@@ -158,7 +219,17 @@ export default function AdminPage() {
                               ? "bg-green-100 text-green-800" 
                               : "bg-gray-100 text-gray-600"
                           }`}>
-                            PIM: {row.push_to_pim ? "✓ Готов" : "○ Не готов"}
+                            PIM: {row.push_to_pim ? "✓ Загружен" : "Не загружен"}
+                          </span>
+                        )}
+                        {typeof row.description_confirmed === "boolean" && (
+                          <span className={`px-3 py-1 rounded-full font-medium ${
+                            row.description_confirmed 
+                              ? "bg-emerald-100 text-emerald-800" 
+                              : "bg-yellow-100 text-yellow-700"
+                          }`}>
+                            {row.description_confirmed ? "✓ Подтверждено" : "○ Не подтверждено"}
+                            {row.description_confirmed && row.confirmed_by_email ? ` • ${row.confirmed_by_email}` : ""}
                           </span>
                         )}
                       </div>
@@ -182,6 +253,14 @@ export default function AdminPage() {
                         <div className="bg-amber-50 border border-amber-200 rounded-lg p-6">
                           <SafeHtml html={row.short_description} className="rich-html rich-html-compact" />
                         </div>
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() => openEditor(row, "short_description")}
+                            className="px-3 py-2 text-sm font-medium text-slate-700 bg-slate-100 border border-slate-300 rounded-lg hover:bg-slate-200"
+                          >
+                            Редактировать краткое описание
+                          </button>
+                        </div>
                       </div>
                     )}
 
@@ -197,6 +276,14 @@ export default function AdminPage() {
                         </div>
                         <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-6">
                           <SafeHtml html={row.description} className="rich-html rich-html-detailed" />
+                        </div>
+                        <div className="flex gap-3">
+                          <button
+                            onClick={() => openEditor(row, "description")}
+                            className="px-3 py-2 text-sm font-medium text-slate-700 bg-slate-100 border border-slate-300 rounded-lg hover:bg-slate-200"
+                          >
+                            Редактировать полное описание
+                          </button>
                         </div>
                       </div>
                     )}
@@ -215,6 +302,14 @@ export default function AdminPage() {
                       <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-6">
                         <SafeHtml html={row.short_description} className="rich-html rich-html-detailed" />
                       </div>
+                      <div className="flex gap-3 mt-3">
+                        <button
+                          onClick={() => openEditor(row, "short_description")}
+                          className="px-3 py-2 text-sm font-medium text-slate-700 bg-slate-100 border border-slate-300 rounded-lg hover:bg-slate-200"
+                        >
+                          Редактировать описание
+                        </button>
+                      </div>
                     </div>
                   )}
 
@@ -230,9 +325,25 @@ export default function AdminPage() {
                       <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-6">
                         <SafeHtml html={row.description} className="rich-html rich-html-detailed" />
                       </div>
+                      <div className="flex gap-3 mt-3">
+                        <button
+                          onClick={() => openEditor(row, "description")}
+                          className="px-3 py-2 text-sm font-medium text-slate-700 bg-slate-100 border border-slate-300 rounded-lg hover:bg-slate-200"
+                        >
+                          Редактировать описание
+                        </button>
+                      </div>
                     </div>
                   )}
-
+                  <div className="mt-6 flex items-center gap-3">
+                    <button
+                      onClick={() => confirmDescription(row)}
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                      disabled={row.description_confirmed === true}
+                    >
+                      {row.description_confirmed ? "Описание подтверждено" : "Подтвердить описание"}
+                    </button>
+                  </div>
 
                 </div>
               </div>
@@ -258,6 +369,13 @@ export default function AdminPage() {
           onPageChange={setPage}
         />
       </div>
+
+      <RichTextEditorModal
+        open={editorState.open}
+        initialHtml={editorState.initialHtml}
+        onCancel={() => setEditorState({ open: false, rowId: null, field: null, initialHtml: "" })}
+        onSave={saveEditor}
+      />
     </div>
   );
 }
@@ -312,6 +430,82 @@ function PaginationBar({ page, total, pageSize, onPageChange }: PaginationProps)
           >
             Последняя »
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RichTextEditorModal({
+  open,
+  initialHtml,
+  onCancel,
+  onSave,
+}: {
+  open: boolean;
+  initialHtml: string;
+  onCancel: () => void;
+  onSave: (html: string) => void;
+}) {
+  const editorRef = useRef<HTMLDivElement | null>(null);
+  const [html, setHtml] = useState<string>("");
+
+  useEffect(() => {
+    if (open && editorRef.current) {
+      const initial = initialHtml || "";
+      editorRef.current.innerHTML = initial;
+      setHtml(initial);
+    }
+  }, [open, initialHtml]);
+
+  if (!open) return null;
+
+  function exec(cmd: string, val?: string) {
+    editorRef.current?.focus();
+    document.execCommand(cmd, false, val);
+  }
+
+  function handleSave() {
+    onSave(html);
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-4xl bg-white text-slate-800 rounded-xl shadow-2xl border border-slate-200 overflow-hidden">
+        <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+          <div className="flex flex-wrap gap-2">
+            <button className="px-2 py-1 text-sm bg-white text-slate-700 rounded border border-slate-300 hover:bg-slate-50" onClick={() => exec("bold")}>B</button>
+            <button className="px-2 py-1 text-sm bg-white text-slate-700 rounded border border-slate-300 hover:bg-slate-50" onClick={() => exec("italic")}><em>I</em></button>
+            <button className="px-2 py-1 text-sm bg-white text-slate-700 rounded border border-slate-300 hover:bg-slate-50" onClick={() => exec("underline")}><u>U</u></button>
+            <button className="px-2 py-1 text-sm bg-white text-slate-700 rounded border border-slate-300 hover:bg-slate-50" onClick={() => exec("insertUnorderedList")}>• Список</button>
+            <button className="px-2 py-1 text-sm bg-white text-slate-700 rounded border border-slate-300 hover:bg-slate-50" onClick={() => exec("insertOrderedList")}>1. Список</button>
+            <button className="px-2 py-1 text-sm bg-white text-slate-700 rounded border border-slate-300 hover:bg-slate-50" onClick={() => exec("formatBlock", "h2")}>H2</button>
+            <button className="px-2 py-1 text-sm bg-white text-slate-700 rounded border border-slate-300 hover:bg-slate-50" onClick={() => exec("formatBlock", "p")}>P</button>
+            <button
+              className="px-2 py-1 text-sm bg-white text-slate-700 rounded border border-slate-300 hover:bg-slate-50"
+              onClick={() => {
+                const url = prompt("URL ссылки:");
+                if (url) exec("createLink", url);
+              }}
+            >
+              Ссылка
+            </button>
+            <button className="px-2 py-1 text-sm bg-white text-slate-700 rounded border border-slate-300 hover:bg-slate-50" onClick={() => exec("removeFormat")}>Очистить</button>
+          </div>
+          <div className="flex gap-2">
+            <button className="px-3 py-2 text-sm bg-white text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50" onClick={onCancel}>Отмена</button>
+            <button className="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700" onClick={handleSave}>Сохранить</button>
+          </div>
+        </div>
+        <div className="p-4 space-y-4">
+          <div
+            ref={editorRef}
+            className="min-h-[320px] max-h-[50vh] overflow-auto border border-slate-300 rounded-lg p-4 focus:outline-none bg-white text-slate-900 rich-html rich-html-detailed"
+            contentEditable
+            suppressContentEditableWarning
+            onInput={() => setHtml(editorRef.current?.innerHTML ?? "")}
+          />
+          <p className="text-xs text-slate-500">Совет: выделите текст и используйте кнопки сверху для форматирования. HTML будет очищен автоматически при сохранении.</p>
         </div>
       </div>
     </div>
