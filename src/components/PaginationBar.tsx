@@ -1,3 +1,5 @@
+"use client";
+
 import { PaginationProps } from "@/types/main";
 
 export function PaginationBar({ page, total, pageSize, onPageChange, remainingToConfirm = 0 }: PaginationProps) {
