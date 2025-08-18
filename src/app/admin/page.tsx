@@ -1,23 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import DOMPurify from "isomorphic-dompurify";
 import { supabase } from "@/lib/supabaseClient";
 import { SafeHtml } from "@/components/SafeHtml";
-import Link from "next/link";
-import DOMPurify from "isomorphic-dompurify";
-
-type Row = {
-	id: string | number;
-	row_number?: number | null;
-	uid?: string | null;
-	product_name?: string | null;
-	short_description?: string | null;
-	description?: string | null;
-	description_added?: boolean | null;
-	push_to_pim?: boolean | null;
-	description_confirmed?: boolean | null;
-	confirmed_by_email?: string | null;
-};
+import { Row } from "@/types/products";
+import { Header } from "@/components/Header";
+import { PaginationBar } from "@/components/PaginationBar";
+import { RichTextEditorModal } from "@/components/RichTextEditorModal";
 
 export default function AdminPage() {
   const [rows, setRows] = useState<Row[]>([]);
@@ -27,6 +17,8 @@ export default function AdminPage() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
+  const [remainingToConfirm, setRemainingToConfirm] = useState(0);
+  const [leavingIds, setLeavingIds] = useState<Set<string | number>>(new Set());
 
   const [editorState, setEditorState] = useState<{
     open: boolean;
@@ -58,6 +50,7 @@ export default function AdminPage() {
           { count: "exact" }
         )
         .eq("description_added", true)
+        .eq("description_confirmed", false)
         .order("id", { ascending: false })
         .range(from, to);
 
@@ -68,16 +61,18 @@ export default function AdminPage() {
       } else {
         setRows(data ?? []);
         setTotal(count ?? 0);
+        // Count remaining to confirm across all items with description_added = true
+        const { count: remainingCount } = await supabase
+          .from("products")
+          .select("id", { count: "exact", head: true })
+          .eq("description_added", true)
+          .eq("description_confirmed", false);
+        setRemainingToConfirm(remainingCount ?? 0);
       }
       setLoading(false);
     };
     fetchData();
   }, [page]);
-
-  async function onLogout() {
-    await supabase.auth.signOut();
-    window.location.href = "/login";
-  }
 
   function openEditor(row: Row, field: "short_description" | "description") {
     setEditorState({
@@ -124,39 +119,24 @@ export default function AdminPage() {
     }
     const updated = data?.[0];
     if (updated) {
-      setRows((prev) => prev.map((r) => (r.id === updated.id ? { ...r, ...updated } : r)));
+      // Плавно скрываем карточку, затем удаляем из списка
+      setLeavingIds((prev) => new Set(prev).add(updated.id));
+      window.setTimeout(() => {
+        setRows((prev) => prev.filter((r) => r.id !== updated.id));
+        setRemainingToConfirm((x) => Math.max(0, x - 1));
+        setLeavingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(updated.id);
+          return next;
+        });
+      }, 350);
     }
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       {/* Шапка */}
-      <div className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                Админка товаров — Уровень
-              </h1>
-              <p className="text-slate-600 mt-1">Проверка и оценка AI-генерированных описаний</p>
-            </div>
-            <div className="flex gap-3">
-              <Link 
-                href="/" 
-                className="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors"
-              >
-                На главную
-              </Link>
-              <button 
-                onClick={onLogout} 
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors border border-slate-300"
-              >
-                Выйти
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <Header />
 
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
 
@@ -166,6 +146,7 @@ export default function AdminPage() {
         total={total}
         pageSize={pageSize}
         onPageChange={setPage}
+        remainingToConfirm={remainingToConfirm}
       />
 
         {loading && (
@@ -186,7 +167,12 @@ export default function AdminPage() {
         {!loading && !error && (
           <div className="space-y-8">
             {rows.map((row) => (
-              <div key={row.id} className="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden hover:shadow-xl transition-shadow duration-300">
+              <div
+                key={row.id}
+                className={`bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden hover:shadow-xl transition-all duration-300 ${
+                  leavingIds.has(row.id) ? "opacity-0 scale-[0.98] translate-y-2" : "opacity-100"
+                }`}
+              >
                 {/* Заголовок карточки */}
                 <div className="bg-gradient-to-r from-slate-50 to-blue-50 px-8 py-6 border-b border-slate-200">
                   <div className="flex items-start justify-between">
@@ -367,6 +353,7 @@ export default function AdminPage() {
           total={total}
           pageSize={pageSize}
           onPageChange={setPage}
+          remainingToConfirm={remainingToConfirm}
         />
       </div>
 
@@ -379,137 +366,4 @@ export default function AdminPage() {
     </div>
   );
 }
-
-type PaginationProps = {
-  page: number;
-  total: number;
-  pageSize: number;
-  onPageChange: (p: number) => void;
-};
-
-function PaginationBar({ page, total, pageSize, onPageChange }: PaginationProps) {
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
-  const to = Math.min(total, page * pageSize);
-
-  return (
-    <div className="bg-white rounded-xl shadow-lg border border-slate-200 px-6 py-4">
-      <div className="flex items-center justify-between gap-4">
-        <div className="text-sm text-slate-600 font-medium">
-          Показано <span className="text-slate-900 font-semibold">{from}–{to}</span> из <span className="text-slate-900 font-semibold">{total}</span> товаров
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            className="px-3 py-2 text-sm font-medium text-slate-600 bg-slate-50 border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            onClick={() => onPageChange(1)}
-            disabled={page === 1}
-          >
-            « Первая
-          </button>
-          <button
-            className="px-3 py-2 text-sm font-medium text-slate-600 bg-slate-50 border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            onClick={() => onPageChange(Math.max(1, page - 1))}
-            disabled={page === 1}
-          >
-            ‹ Назад
-          </button>
-          <span className="px-4 py-2 text-sm font-semibold text-slate-800 bg-blue-50 border border-blue-200 rounded-lg">
-            Стр. {page} / {totalPages}
-          </span>
-          <button
-            className="px-3 py-2 text-sm font-medium text-slate-600 bg-slate-50 border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            onClick={() => onPageChange(Math.min(totalPages, page + 1))}
-            disabled={page >= totalPages}
-          >
-            Вперёд ›
-          </button>
-          <button
-            className="px-3 py-2 text-sm font-medium text-slate-600 bg-slate-50 border border-slate-300 rounded-lg hover:bg-slate-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            onClick={() => onPageChange(totalPages)}
-            disabled={page >= totalPages}
-          >
-            Последняя »
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function RichTextEditorModal({
-  open,
-  initialHtml,
-  onCancel,
-  onSave,
-}: {
-  open: boolean;
-  initialHtml: string;
-  onCancel: () => void;
-  onSave: (html: string) => void;
-}) {
-  const editorRef = useRef<HTMLDivElement | null>(null);
-  const [html, setHtml] = useState<string>("");
-
-  useEffect(() => {
-    if (open && editorRef.current) {
-      const initial = initialHtml || "";
-      editorRef.current.innerHTML = initial;
-      setHtml(initial);
-    }
-  }, [open, initialHtml]);
-
-  if (!open) return null;
-
-  function exec(cmd: string, val?: string) {
-    editorRef.current?.focus();
-    document.execCommand(cmd, false, val);
-  }
-
-  function handleSave() {
-    onSave(html);
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-4xl bg-white text-slate-800 rounded-xl shadow-2xl border border-slate-200 overflow-hidden">
-        <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between bg-slate-50">
-          <div className="flex flex-wrap gap-2">
-            <button className="px-2 py-1 text-sm bg-white text-slate-700 rounded border border-slate-300 hover:bg-slate-50" onClick={() => exec("bold")}>B</button>
-            <button className="px-2 py-1 text-sm bg-white text-slate-700 rounded border border-slate-300 hover:bg-slate-50" onClick={() => exec("italic")}><em>I</em></button>
-            <button className="px-2 py-1 text-sm bg-white text-slate-700 rounded border border-slate-300 hover:bg-slate-50" onClick={() => exec("underline")}><u>U</u></button>
-            <button className="px-2 py-1 text-sm bg-white text-slate-700 rounded border border-slate-300 hover:bg-slate-50" onClick={() => exec("insertUnorderedList")}>• Список</button>
-            <button className="px-2 py-1 text-sm bg-white text-slate-700 rounded border border-slate-300 hover:bg-slate-50" onClick={() => exec("insertOrderedList")}>1. Список</button>
-            <button className="px-2 py-1 text-sm bg-white text-slate-700 rounded border border-slate-300 hover:bg-slate-50" onClick={() => exec("formatBlock", "h2")}>H2</button>
-            <button className="px-2 py-1 text-sm bg-white text-slate-700 rounded border border-slate-300 hover:bg-slate-50" onClick={() => exec("formatBlock", "p")}>P</button>
-            <button
-              className="px-2 py-1 text-sm bg-white text-slate-700 rounded border border-slate-300 hover:bg-slate-50"
-              onClick={() => {
-                const url = prompt("URL ссылки:");
-                if (url) exec("createLink", url);
-              }}
-            >
-              Ссылка
-            </button>
-            <button className="px-2 py-1 text-sm bg-white text-slate-700 rounded border border-slate-300 hover:bg-slate-50" onClick={() => exec("removeFormat")}>Очистить</button>
-          </div>
-          <div className="flex gap-2">
-            <button className="px-3 py-2 text-sm bg-white text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50" onClick={onCancel}>Отмена</button>
-            <button className="px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700" onClick={handleSave}>Сохранить</button>
-          </div>
-        </div>
-        <div className="p-4 space-y-4">
-          <div
-            ref={editorRef}
-            className="min-h-[320px] max-h-[50vh] overflow-auto border border-slate-300 rounded-lg p-4 focus:outline-none bg-white text-slate-900 rich-html rich-html-detailed"
-            contentEditable
-            suppressContentEditableWarning
-            onInput={() => setHtml(editorRef.current?.innerHTML ?? "")}
-          />
-          <p className="text-xs text-slate-500">Совет: выделите текст и используйте кнопки сверху для форматирования. HTML будет очищен автоматически при сохранении.</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 
