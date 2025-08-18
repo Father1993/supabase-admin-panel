@@ -2,6 +2,7 @@
   "name": "uroven-admin",
   "version": "0.1.0",
   "private": true,
+  "author": "Spinej Andrej",
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
