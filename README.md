@@ -1,39 +1,72 @@
-## Uroven Admin — админка для Supabase
+## Uroven Admin — simple Supabase admin for one table
 
-Коротко о проекте: минимальная админ-панель на Next.js для просмотра таблицы `products` из Supabase с аккуратным рендером HTML в описаниях.
+Minimal Next.js admin panel for the `products` table in Supabase. It renders HTML safely, lets editors update descriptions through a lightweight rich‑text editor, and confirm content with audit fields.
 
-### Функционал
-- Просмотр таблицы `products` (поля: `product_name`, `short_description`, `description`, `id`, `uid`, `row_number`, `push_to_pim`).
-- Фильтр: показываются только записи, где `description_added = true`.
-- Пагинация: по 50 записей на страницу.
-- Безопасный вывод HTML в `short_description` и `description` (санитизация).
-- Вход по email/паролю Supabase, выход из аккаунта.
+### Features
+- View `products` with pagination (50 per page) and a built‑in filter: only rows where `description_added = true` are listed
+- Safe HTML rendering for `short_description` and `description` (sanitized)
+- Inline rich‑text editor (contentEditable) with a small toolbar: Bold, Italic, Underline, H2, Paragraph, Ordered/Unordered lists, Link, Clear formatting
+- Live preview inside the editor modal; HTML is sanitized before saving
+- “Confirm description” action storing the current user email
+- Visual badges for PIM readiness and confirmation status
+- Supabase auth (email/password): login and logout
 
-### Технологии
+### Tech stack
 - Next.js (App Router, TypeScript, Tailwind CSS)
 - Supabase JS SDK
-- Sanitизация HTML: `isomorphic-dompurify`
+- HTML sanitization: `isomorphic-dompurify`
 
-### Быстрый старт
-1. Установить зависимости:
+### Getting started
+1) Install dependencies
 ```bash
 npm i
 ```
-2. Создать `.env.local`:
+2) Create `.env.local`
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=your_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_public_anon_key
 ```
-3. Запустить dev-сервер и открыть `http://localhost:3000`:
+3) Run locally
 ```bash
 npm run dev
 ```
-4. Войти на странице `/login`, затем открыть `/admin`.
+Open `http://localhost:3000`, sign in at `/login`, then go to `/admin`.
 
-### Права в Supabase (если RLS отключён)
+### Database schema (products)
+Common columns used by the app include: `row_number`, `id` (PIM id), `uid` (uuid), `product_name`, `short_description`, `description`, `description_added`, `push_to_pim`.
+
+This app also expects the following audit/approval columns. Run in Supabase SQL editor:
 ```sql
-grant usage on schema public to anon, authenticated;
-grant select on public.products to anon, authenticated;
+-- 1) New columns
+alter table public.products
+  add column if not exists created_at timestamptz not null default now(),
+  add column if not exists updated_at timestamptz not null default now(),
+  add column if not exists description_confirmed boolean not null default false,
+  add column if not exists confirmed_by_email text;
+
+-- 2) updated_at trigger
+create or replace function public.set_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_set_updated_at on public.products;
+create trigger trg_set_updated_at
+before update on public.products
+for each row
+execute function public.set_updated_at();
 ```
 
-> Примечание: ключ `SERVICE_ROLE_KEY` не используется на клиенте. Для браузера достаточно `NEXT_PUBLIC_SUPABASE_URL` и `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+### Using the editor
+- Click “Edit short description” or “Edit full description” on a product card
+- Use the toolbar to format text (Bold/Italic/Underline, H2/P, lists, link)
+- See changes in the live preview; click “Save” to persist
+- Click “Confirm description” to mark it approved; your email will be stored
+
+### Favicon & branding
+The app uses `src/app/favicon.ico`. Replace it with your icon to update the favicon. The home page shows the company logo from `src/images/logo.png`.
