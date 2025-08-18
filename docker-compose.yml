@@ -22,6 +22,9 @@ services:
       - traefik.http.routers.uroven-admin.tls=true
       - traefik.http.routers.uroven-admin.tls.certresolver=mytlschallenge
       - traefik.http.services.uroven-admin.loadbalancer.server.port=3000
+      # Basic Auth middleware (опционально). Пример переменной: BASIC_AUTH_USERS=user:$$apr1$$H6uskkkW$$IgXLP6ewTrSuBkTrqE8wj/
+      - traefik.http.middlewares.uroven-admin-auth.basicauth.users=${BASIC_AUTH_USERS}
+      - traefik.http.routers.uroven-admin.middlewares=uroven-admin-auth
     networks:
       - traefik
 

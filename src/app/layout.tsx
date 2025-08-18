@@ -18,6 +18,18 @@ export const metadata: Metadata = {
   applicationName: "Uroven Admin",
   authors: [{ name: "Spinej Andrej" }],
   creator: "Spinej Andrej",
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+    googleBot: {
+      index: false,
+      follow: false,
+      noimageindex: true,
+      nosnippet: true,
+      noarchive: true,
+    },
+  },
 };
 
 export default function RootLayout({
