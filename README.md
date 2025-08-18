@@ -1,4 +1,4 @@
-## Uroven Admin — простая админка для Supabase
+## Uroven Admin — админка для Supabase
 
 Коротко о проекте: минимальная админ-панель на Next.js для просмотра таблицы `products` из Supabase с аккуратным рендером HTML в описаниях.
 
