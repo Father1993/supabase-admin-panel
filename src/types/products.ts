@@ -3,6 +3,8 @@ export type Row = {
 	row_number?: number | null;
 	uid?: string | null;
 	product_name?: string | null;
+	article?: string | null;
+	code_1c?: string | null;
 	short_description?: string | null;
 	description?: string | null;
 	description_added?: boolean | null;
