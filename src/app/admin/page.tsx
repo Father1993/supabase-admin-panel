@@ -46,7 +46,7 @@ export default function AdminPage() {
       const { data, error, count } = await supabase
         .from("products")
         .select(
-          "row_number, id, uid, product_name, short_description, description, description_added, push_to_pim, description_confirmed, confirmed_by_email",
+          "row_number, id, uid, product_name, article, code_1c, short_description, description, description_added, push_to_pim, description_confirmed, confirmed_by_email",
           { count: "exact" }
         )
         .eq("description_added", true)
@@ -193,10 +193,16 @@ export default function AdminPage() {
                             <span className="text-blue-800 ml-1">{row.uid}</span>
                           </span>
                         )}
-                        {typeof row.row_number !== "undefined" && row.row_number !== null && (
-                          <span className="bg-indigo-100 px-3 py-1 rounded-full">
-                            <span className="text-indigo-600 font-medium">Порядковый номер #:</span>
-                            <span className="text-indigo-800 ml-1">{row.row_number}</span>
+                        {row.article && (
+                          <span className="bg-violet-100 px-3 py-1 rounded-full">
+                            <span className="text-violet-600 font-medium">Артикул:</span>
+                            <span className="text-violet-800 ml-1">{row.article}</span>
+                          </span>
+                        )}
+                        {row.code_1c && (
+                          <span className="bg-teal-100 px-3 py-1 rounded-full">
+                            <span className="text-teal-600 font-medium">Код 1С:</span>
+                            <span className="text-teal-800 ml-1">{row.code_1c}</span>
                           </span>
                         )}
                         {typeof row.push_to_pim === "boolean" && (
