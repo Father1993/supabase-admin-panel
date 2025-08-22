@@ -11,4 +11,6 @@ export type Row = {
 	push_to_pim?: boolean | null;
 	description_confirmed?: boolean | null;
 	confirmed_by_email?: string | null;
+	created_at?: string | null;
+	updated_at?: string | null;
 };

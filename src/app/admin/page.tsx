@@ -16,6 +16,7 @@ export default function AdminPage() {
   const pageSize = 50;
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [sortDesc, setSortDesc] = useState(true);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
   const [remainingToConfirm, setRemainingToConfirm] = useState(0);
   const [leavingIds, setLeavingIds] = useState<Set<string | number>>(new Set());
@@ -46,12 +47,12 @@ export default function AdminPage() {
       const { data, error, count } = await supabase
         .from("products")
         .select(
-          "row_number, id, uid, product_name, article, code_1c, short_description, description, description_added, push_to_pim, description_confirmed, confirmed_by_email",
+          "row_number, id, uid, product_name, article, code_1c, short_description, description, description_added, push_to_pim, description_confirmed, confirmed_by_email, created_at, updated_at",
           { count: "exact" }
         )
         .eq("description_added", true)
         .eq("description_confirmed", false)
-        .order("id", { ascending: false })
+        .order("updated_at", { ascending: !sortDesc, nullsFirst: false })
         .range(from, to);
 
       if (error) {
@@ -72,7 +73,7 @@ export default function AdminPage() {
       setLoading(false);
     };
     fetchData();
-  }, [page]);
+  }, [page, sortDesc]);
 
   function openEditor(row: Row, field: "short_description" | "description") {
     setEditorState({
@@ -140,14 +141,26 @@ export default function AdminPage() {
 
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
 
-      {/* Информация о пагинации */}
-      <PaginationBar
-        page={page}
-        total={total}
-        pageSize={pageSize}
-        onPageChange={setPage}
-        remainingToConfirm={remainingToConfirm}
-      />
+      {/* Сортировка и пагинация */}
+      <div className="flex flex-col gap-4">
+        
+        <PaginationBar
+          page={page}
+          total={total}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          remainingToConfirm={remainingToConfirm}
+        />
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setSortDesc((v) => !v)}
+            className="px-4 py-2 border rounded-lg bg-white text-slate-800 hover:bg-slate-50"
+            title="Переключить порядок сортировки по дате изменения"
+          >
+            {sortDesc ? "Сортировка: сначала свежие" : "Сортировка: сначала старые"}
+          </button>
+        </div>
+      </div>
 
         {loading && (
           <div className="flex items-center justify-center py-12">
