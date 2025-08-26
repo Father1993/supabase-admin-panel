@@ -37,29 +37,30 @@ npm run dev
 
 Это приложение также ожидает следующие столбцы аудита/утверждения. Запустите в редакторе SQL Supabase:
 ```sql
--- 1) Новые столбцы
+-- 1) New columns
 alter table public.products
-add column if not exist created_at timestamptz not null default now(),
-add column if not exist updated_at timestamptz not null default now(),
-add column if not exist description_confirmed boolean not null default false,
-add column if not exist confirmed_by_email text;
+  add column if not exists created_at timestamptz not null default now(),
+  add column if not exists updated_at timestamptz not null default now(),
+  add column if not exists description_confirmed boolean not null default false,
+  add column if not exists confirmed_by_email text;
 
--- 2) триггер updated_at
-создать или заменить функцию public.set_updated_at()
-возвращает триггер
-язык plpgsql
-как $$
-начало
-new.updated_at = now();
-возврат нового;
-конец;
+-- 2) updated_at trigger
+create or replace function public.set_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
 $$;
 
-удалить триггер, если существует trg_set_updated_at для public.products;
-создать триггер trg_set_updated_at
-перед обновлением для public.products
-для каждой строки
-выполнить функцию public.set_updated_at();
+drop trigger if exists trg_set_updated_at on public.products;
+create trigger trg_set_updated_at
+before update on public.products
+for each row
+execute function public.set_updated_at();
+```
 
 ### Использование редактора
 - Нажмите «Изменить краткое описание» или «Изменить полное описание» на карточке товара
@@ -69,3 +70,5 @@ $$;
 
 ### Фавикон и брендинг
 Приложение использует `src/app/favicon.ico`. Замените его на свой значок, чтобы обновить фавикон. На главной странице отображается логотип компании из `src/images/logo.png`.
+
+
