@@ -103,12 +103,42 @@ export default function ProductsPage() {
                       {product.product_name && (
                         <h3 className="text-xl font-bold text-slate-900 mb-2">{product.product_name}</h3>
                       )}
-                      <div className="flex flex-wrap gap-2 text-sm">
-                        <span className="bg-slate-100 px-2 py-1 rounded-full">ID: {String(product.id)}</span>
-                        {product.uid && <span className="bg-blue-100 px-2 py-1 rounded-full text-blue-800">UID: {product.uid}</span>}
-                        {product.article && <span className="bg-violet-100 px-2 py-1 rounded-full text-violet-800">Артикул: {product.article}</span>}
+                      <div className="flex flex-wrap gap-4 text-sm">
+                        <span className="bg-slate-100 px-3 py-1 rounded-full">
+                          <span className="text-slate-500 font-medium">ID:</span>
+                          <span className="text-slate-800 ml-1">{String(product.id)}</span>
+                        </span>
+                        {product.uid && (
+                          <span className="bg-blue-100 px-3 py-1 rounded-full">
+                            <span className="text-blue-600 font-medium">UID:</span>
+                            <span className="text-blue-800 ml-1">{product.uid}</span>
+                          </span>
+                        )}
+                        {product.article && (
+                          <span className="bg-violet-100 px-3 py-1 rounded-full">
+                            <span className="text-violet-600 font-medium">Артикул:</span>
+                            <span className="text-violet-800 ml-1">{product.article}</span>
+                          </span>
+                        )}
+                        {product.code_1c && (
+                          <span className="bg-teal-100 px-3 py-1 rounded-full">
+                            <span className="text-teal-600 font-medium">Код 1С:</span>
+                            <span className="text-teal-800 ml-1">{product.code_1c}</span>
+                          </span>
+                        )}
+                        {typeof product.push_to_pim === "boolean" && (
+                          <span className={`px-3 py-1 rounded-full font-medium ${
+                            product.push_to_pim 
+                              ? "bg-green-100 text-green-800" 
+                              : "bg-gray-100 text-gray-600"
+                          }`}>
+                            PIM: {product.push_to_pim ? "✓ Загружен" : "Не загружен"}
+                          </span>
+                        )}
                         {product.description_confirmed && (
-                          <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full">✓ Подтверждено</span>
+                          <span className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-medium">
+                            ✓ Подтверждено
+                          </span>
                         )}
                       </div>
                     </div>
