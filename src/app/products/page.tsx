@@ -22,6 +22,8 @@ export default function ProductsPage() {
   }, [page, sortOrder]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function fetchProducts() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { window.location.href = "/login"; return; }
     setLoading(true);
     setError(null);
 
