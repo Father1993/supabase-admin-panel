@@ -1,41 +1,41 @@
-## Uroven Admin — простая панель администратора Supabase для одной таблицы
+## Uroven Admin — simple Supabase admin for one table
 
-Минимальная панель администратора Next.js для таблицы `products` в Supabase. Она безопасно отображает HTML, позволяет редакторам обновлять описания через лёгкий редактор форматированного текста и подтверждать содержимое с помощью полей аудита.
+Minimal Next.js admin panel for the `products` table in Supabase. It renders HTML safely, lets editors update descriptions through a lightweight rich‑text editor, and confirm content with audit fields.
 
-### Возможности
-- Просмотр `products` с пагинацией (50 на страницу) и встроенным фильтром: отображаются только строки, для которых `description_added = true`
-- Безопасный рендеринг HTML для `short_description` и `description` (с очисткой)
-- Встроенный редактор форматированного текста (contentEditable) с небольшой панелью инструментов: жирный шрифт, курсив, подчёркивание, H2, абзац, нумерованные/маркированные списки, ссылка, чистое форматирование
-- Интерактивный предварительный просмотр в модальном окне редактора; HTML-код очищается перед сохранением.
-- Действие «Подтвердить описание» сохраняет адрес электронной почты текущего пользователя.
-- Визуальные значки готовности PIM и статуса подтверждения.
-- Авторизация Supabase (адрес электронной почты/пароль): вход и выход.
+### Features
+- View `products` with pagination (50 per page) and a built‑in filter: only rows where `description_added = true` are listed
+- Safe HTML rendering for `short_description` and `description` (sanitized)
+- Inline rich‑text editor (contentEditable) with a small toolbar: Bold, Italic, Underline, H2, Paragraph, Ordered/Unordered lists, Link, Clear formatting
+- Live preview inside the editor modal; HTML is sanitized before saving
+- “Confirm description” action storing the current user email
+- Visual badges for PIM readiness and confirmation status
+- Supabase auth (email/password): login and logout
 
-### Технический стек.
-- Next.js (App Router, TypeScript, Tailwind CSS).
-- Supabase JS SDK.
-- Очистка HTML: `isomorphic-dompurify`.
+### Tech stack
+- Next.js (App Router, TypeScript, Tailwind CSS)
+- Supabase JS SDK
+- HTML sanitization: `isomorphic-dompurify`
 
-### Начало работы.
-1) Установка зависимостей.
+### Getting started
+1) Install dependencies
 ```bash
 npm i
 ```
-2) Создание `.env.local`.
+2) Create `.env.local`
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=your_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_public_anon_key
 ```
-3) Запуск локально.
+3) Run locally
 ```bash
 npm run dev
 ```
-Открыть. `http://localhost:3000`, войдите в систему по адресу `/login`, затем перейдите в раздел `/admin`.
+Open `http://localhost:3000`, sign in at `/login`, then go to `/admin`.
 
-### Схема базы данных (products)
-Приложение использует следующие столбцы: `row_number`, `id` (идентификатор PIM), `uid` (uuid), `product_name`, `short_description`, `description`, `description_added`, `push_to_pim`.
+### Database schema (products)
+Common columns used by the app include: `row_number`, `id` (PIM id), `uid` (uuid), `product_name`, `short_description`, `description`, `description_added`, `push_to_pim`.
 
-Это приложение также ожидает следующие столбцы аудита/утверждения. Запустите в редакторе SQL Supabase:
+This app also expects the following audit/approval columns. Run in Supabase SQL editor:
 ```sql
 -- 1) New columns
 alter table public.products
@@ -62,13 +62,11 @@ for each row
 execute function public.set_updated_at();
 ```
 
-### Использование редактора
-- Нажмите «Изменить краткое описание» или «Изменить полное описание» на карточке товара
-- Используйте панель инструментов для форматирования текста (жирный/курсив/подчёркнутый, H2/P, списки, ссылка)
-- Смотрите изменения в режиме предварительного просмотра; нажмите «Сохранить» для сохранения
-- Нажмите «Подтвердить описание», чтобы отметить его как одобренное; Ваш адрес электронной почты будет сохранён.
+### Using the editor
+- Click “Edit short description” or “Edit full description” on a product card
+- Use the toolbar to format text (Bold/Italic/Underline, H2/P, lists, link)
+- See changes in the live preview; click “Save” to persist
+- Click “Confirm description” to mark it approved; your email will be stored
 
-### Фавикон и брендинг
-Приложение использует `src/app/favicon.ico`. Замените его на свой значок, чтобы обновить фавикон. На главной странице отображается логотип компании из `src/images/logo.png`.
-
-
+### Favicon & branding
+The app uses `src/app/favicon.ico`. Replace it with your icon to update the favicon. The home page shows the company logo from `src/images/logo.png`.
