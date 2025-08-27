@@ -68,9 +68,9 @@ export default function ProductsPage() {
           <select
             value={sortOrder}
             onChange={(e) => setSortOrder(e.target.value as "desc" | "asc")}
-            className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
           >
-            <option value="desc text-slate-900">Сначала свежие</option>
+            <option value="desc ">Сначала свежие</option>
             <option value="asc">Сначала старые</option>
           </select>
         </div>
