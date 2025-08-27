@@ -147,9 +147,7 @@ export default function AdminPage() {
     window.location.reload(); // Простая перезагрузка для получения новой карточки
   }
   
-  async function loadNextCard() {
-    window.location.reload(); // Простая перезагрузка для получения новой карточки
-  }
+  // Кнопка ручной загрузки следующей карточки удалена как избыточная
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -159,16 +157,10 @@ export default function AdminPage() {
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
 
       {/* Информация о работе */}
-      <div className="bg-white border rounded-lg px-4 py-3 flex items-center justify-between">
+      <div className="bg-white border rounded-lg px-4 py-3">
         <div className="text-sm text-gray-600">
           Осталось товаров для подтверждения: <span className="font-medium text-gray-900">{remainingToConfirm}</span>
         </div>
-        <button
-          onClick={loadNextCard}
-          className="px-4 py-2 border rounded-lg bg-blue-600 text-white hover:bg-blue-700"
-        >
-          Загрузить следующий товар
-        </button>
       </div>
 
         {loading && (
@@ -359,12 +351,7 @@ export default function AdminPage() {
             </div>
             <h3 className="text-lg font-medium text-slate-800 mb-2">Нет товаров для подтверждения</h3>
             <p className="text-slate-600">Все товары уже обработаны или заблокированы другими пользователями</p>
-            <button
-              onClick={loadNextCard}
-              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              Попробовать снова
-            </button>
+            {/* Кнопка ручной перезагрузки удалена */}
           </div>
         )}
       </div>
