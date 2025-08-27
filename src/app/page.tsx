@@ -29,6 +29,9 @@ export default function Home() {
               <Link href="/admin" className="px-5 py-3 rounded-lg border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 transition">
                 В админку
               </Link>
+              <Link href="/products" className="px-5 py-3 rounded-lg border border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition">
+                Список товаров
+              </Link>
             </div>
           </div>
           <div className="bg-white/80 backdrop-blur rounded-xl border border-slate-200 shadow-lg p-6">

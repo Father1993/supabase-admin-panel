@@ -13,4 +13,5 @@ export type Row = {
 	confirmed_by_email?: string | null;
 	created_at?: string | null;
 	updated_at?: string | null;
+	locked_until?: string | null;
 };
