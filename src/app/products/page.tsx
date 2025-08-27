@@ -13,30 +13,25 @@ export default function ProductsPage() {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const [dateFilter, setDateFilter] = useState("");
+  const [remainingToConfirm, setRemainingToConfirm] = useState(0);
+  const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc"); // desc = свежие, asc = старые
   const pageSize = 50;
 
   useEffect(() => {
     fetchProducts();
-  }, [page, dateFilter]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [page, sortOrder]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function fetchProducts() {
     setLoading(true);
     setError(null);
 
     try {
-      let query = supabase
+      const { data, error, count } = await supabase
         .from("products")
         .select("*", { count: "exact" })
         .eq("description_added", true)
-        .order("updated_at", { ascending: false })
+        .order("updated_at", { ascending: sortOrder === "asc" })
         .range((page - 1) * pageSize, page * pageSize - 1);
-
-      if (dateFilter) {
-        query = query.gte("updated_at", dateFilter);
-      }
-
-      const { data, error, count } = await query;
 
       if (error) {
         setError(error.message);
@@ -44,6 +39,15 @@ export default function ProductsPage() {
         setProducts(data || []);
         setTotal(count || 0);
       }
+
+      // Подсчитываем товары для подтверждения
+      const { count: remainingCount } = await supabase
+        .from("products")
+        .select("id", { count: "exact", head: true })
+        .eq("description_added", true)
+        .eq("description_confirmed", false);
+      setRemainingToConfirm(remainingCount ?? 0);
+
     } catch {
       setError("Ошибка загрузки данных");
     }
@@ -56,21 +60,23 @@ export default function ProductsPage() {
       <Header title="Список товаров" subtitle="Просмотр товаров с готовыми описаниями" />
 
       <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
-        {/* Фильтр по дате */}
+        {/* Сортировка */}
         <div className="bg-white rounded-lg border p-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Фильтр по дате обновления (от):
+            Сортировка по дате обновления:
           </label>
-          <input
-            type="date"
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
+          <select
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value as "desc" | "asc")}
             className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-          />
+          >
+            <option value="desc text-slate-900">Сначала свежие</option>
+            <option value="asc">Сначала старые</option>
+          </select>
         </div>
 
         {/* Пагинация сверху */}
-        {!loading && <PaginationBar page={page} total={total} pageSize={pageSize} onPageChange={setPage} />}
+        {!loading && <PaginationBar page={page} total={total} pageSize={pageSize} onPageChange={setPage} remainingToConfirm={remainingToConfirm} />}
 
         {loading && (
           <div className="flex items-center justify-center py-12">
@@ -145,7 +151,7 @@ export default function ProductsPage() {
         )}
 
         {/* Пагинация снизу */}
-        {!loading && <PaginationBar page={page} total={total} pageSize={pageSize} onPageChange={setPage} />}
+        {!loading && <PaginationBar page={page} total={total} pageSize={pageSize} onPageChange={setPage} remainingToConfirm={remainingToConfirm} />}
       </div>
     </div>
   );
