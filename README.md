@@ -21,7 +21,7 @@ Minimal Next.js admin panel for the `products` table in Supabase. It renders HTM
 ```bash
 npm i
 ```
-2) Create `.env.local`
+2) Create `.env`
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=your_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_public_anon_key

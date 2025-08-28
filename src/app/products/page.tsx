@@ -14,7 +14,7 @@ export default function ProductsPage() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [remainingToConfirm, setRemainingToConfirm] = useState(0);
-  const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc"); // desc = свежие, asc = старые
+  const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
   const pageSize = 50;
 
   useEffect(() => {
