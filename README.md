@@ -30,7 +30,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_public_anon_key
 ```bash
 npm run dev
 ```
-Open `http://localhost:3000`, sign in at `/login`, then go to `/admin`.
+Open `http://localhost:3000`, sign in at `/login`, then go to `/admin`, then go to `/products`
 
 ### Database schema (products)
 Common columns used by the app include: `row_number`, `id` (PIM id), `uid` (uuid), `product_name`, `short_description`, `description`, `description_added`, `push_to_pim`.
