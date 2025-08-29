@@ -6,7 +6,7 @@ Minimal Next.js admin panel for the `products` table in Supabase. It renders HTM
 
 -   View `products` with pagination (50 per page) and a built‑in filter: only rows where `description_added = true` are listed
 -   View products confirmed by current user on the dedicated "Approved Products" page
--   Admin statistics dashboard for user who have access (configured via environment variable)
+-   Admin statistics dashboard for users with special access (configured in the code)
 -   Safe HTML rendering for `short_description` and `description` (sanitized)
 -   Inline rich‑text editor (contentEditable) with a small toolbar: Bold, Italic, Underline, H2, Paragraph, Ordered/Unordered lists, Link, Clear formatting
 -   Live preview inside the editor modal; HTML is sanitized before saving
@@ -33,7 +33,6 @@ npm i
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=your_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_public_anon_key
-NEXT_PUBLIC_ADMIN_EMAILS=admin1@example.com,admin2@example.com
 ```
 
 3. Run locally
@@ -83,7 +82,7 @@ execute function public.set_updated_at();
 -   See changes in the live preview; click “Save” to persist
 -   Click "Confirm description" to mark it approved; your email will be stored
 -   View all products you've confirmed by navigating to "Мои подтверждения" in the header or `/approved-products` directly
--   Admin users (listed in `NEXT_PUBLIC_ADMIN_EMAILS`) can view a statistics table showing confirmation counts for each user
+-   Admin users can view a statistics table showing confirmation counts for each user
 
 ### Favicon & branding
 
@@ -91,9 +90,9 @@ The app uses `src/app/favicon.ico`. Replace it with your icon to update the favi
 
 ### Admin Features
 
-For users whose email addresses are included in the `NEXT_PUBLIC_ADMIN_EMAILS` environment variable (comma-separated list):
+For users whose email addresses are included in the `ADMIN_EMAILS` array in `src/app/approved-products/page.tsx`:
 
 -   View a statistical dashboard at the top of the "Approved Products" page
 -   See counts of products confirmed by each user in the system
 -   Data is sorted by confirmation count in descending order
--   To add more administrators, update the `NEXT_PUBLIC_ADMIN_EMAILS` variable in your `.env` file
+-   To add more administrators, update the `ADMIN_EMAILS` array in the source code
