@@ -7,6 +7,14 @@ import { Row } from '@/types/products'
 import { Header } from '@/components/Header'
 import { PaginationBar } from '@/components/PaginationBar'
 
+// Список email-адресов пользователей, имеющих доступ к статистике
+// Для добавления нового пользователя просто добавьте его email в этот массив
+const ADMIN_EMAILS = [
+    'bakum_y@mail.ru',
+    'info.uroven.pro@gmail.com',
+    'ekom@uroven.org',
+]
+
 export default function ApprovedProductsPage() {
     const [products, setProducts] = useState<Row[]>([])
     const [loading, setLoading] = useState(true)
@@ -39,9 +47,7 @@ export default function ApprovedProductsPage() {
         setError(null)
 
         // Проверка, имеет ли пользователь доступ к статистике
-        const adminEmails =
-            process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',') || []
-        const isSpecial = userEmail !== null && adminEmails.includes(userEmail)
+        const isSpecial = userEmail !== null && ADMIN_EMAILS.includes(userEmail)
         setIsSpecialUser(isSpecial)
 
         try {
