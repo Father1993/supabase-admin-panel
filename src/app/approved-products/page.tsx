@@ -15,6 +15,10 @@ export default function ApprovedProductsPage() {
     const [total, setTotal] = useState(0)
     const [currentUser, setCurrentUser] = useState<string | null>(null)
     const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc')
+    const [userStats, setUserStats] = useState<
+        { email: string; count: number }[]
+    >([])
+    const [isSpecialUser, setIsSpecialUser] = useState(false)
     const pageSize = 50
 
     useEffect(() => {
@@ -29,9 +33,16 @@ export default function ApprovedProductsPage() {
             window.location.href = '/login'
             return
         }
-        setCurrentUser(user.email ?? null)
+        const userEmail = user.email ?? null
+        setCurrentUser(userEmail)
         setLoading(true)
         setError(null)
+
+        // Проверка, имеет ли пользователь доступ к статистике
+        const adminEmails =
+            process.env.NEXT_PUBLIC_ADMIN_EMAILS?.split(',') || []
+        const isSpecial = userEmail !== null && adminEmails.includes(userEmail)
+        setIsSpecialUser(isSpecial)
 
         try {
             const { data, error, count } = await supabase
@@ -52,6 +63,45 @@ export default function ApprovedProductsPage() {
             setError('Ошибка загрузки данных')
         }
 
+        // Загрузка статистики для специального пользователя
+        if (isSpecial) {
+            try {
+                // Получаем все подтвержденные записи
+                const { data: allConfirmedData, error: statsError } =
+                    await supabase
+                        .from('products')
+                        .select('confirmed_by_email')
+                        .eq('description_confirmed', true)
+                        .not('confirmed_by_email', 'is', null)
+
+                if (!statsError && allConfirmedData) {
+                    // Обрабатываем данные на клиенте
+                    const stats: Record<string, number> = {}
+
+                    // Подсчитываем количество для каждого email
+                    allConfirmedData.forEach((item) => {
+                        const email = item.confirmed_by_email as string
+                        stats[email] = (stats[email] || 0) + 1
+                    })
+
+                    // Преобразуем в массив для сортировки
+                    const statsArray = Object.entries(stats).map(
+                        ([email, count]) => ({
+                            email,
+                            count,
+                        })
+                    )
+
+                    // Сортируем по убыванию количества
+                    statsArray.sort((a, b) => b.count - a.count)
+
+                    setUserStats(statsArray)
+                }
+            } catch (err) {
+                console.error('Ошибка при загрузке статистики:', err)
+            }
+        }
+
         setLoading(false)
     }
 
@@ -63,6 +113,58 @@ export default function ApprovedProductsPage() {
             />
 
             <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+                {/* Статистика для специального пользователя */}
+                {isSpecialUser && userStats.length > 0 && (
+                    <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-5 shadow-sm">
+                        <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-lg font-bold text-indigo-700">
+                                Статистика подтверждений товаров
+                            </h3>
+                            <div className="bg-indigo-100 text-indigo-600 text-xs rounded-full px-3 py-1">
+                                Доступно только администраторам
+                            </div>
+                        </div>
+                        <div className="overflow-hidden rounded-lg border border-indigo-200 bg-white">
+                            <table className="min-w-full divide-y divide-indigo-200">
+                                <thead className="bg-indigo-50">
+                                    <tr>
+                                        <th
+                                            scope="col"
+                                            className="px-4 py-3 text-left text-xs font-medium text-indigo-800 uppercase tracking-wider"
+                                        >
+                                            Email сотрудника
+                                        </th>
+                                        <th
+                                            scope="col"
+                                            className="px-4 py-3 text-left text-xs font-medium text-indigo-800 uppercase tracking-wider"
+                                        >
+                                            Количество подтверждений
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-indigo-100">
+                                    {userStats.map((stat, idx) => (
+                                        <tr
+                                            key={idx}
+                                            className={
+                                                idx % 2 === 0
+                                                    ? 'bg-white'
+                                                    : 'bg-indigo-50'
+                                            }
+                                        >
+                                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                                                {stat.email}
+                                            </td>
+                                            <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-indigo-700">
+                                                {stat.count}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
                 {/* Сортировка */}
                 <div className="bg-white rounded-lg border p-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
