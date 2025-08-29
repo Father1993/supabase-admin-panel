@@ -1,50 +1,63 @@
-## Uroven Admin — simple Supabase admin for one table
+## Uroven Admin — простая админ-панель Supabase для одной таблицы
 
-Minimal Next.js admin panel for the `products` table in Supabase. It renders HTML safely, lets editors update descriptions through a lightweight rich‑text editor, and confirm content with audit fields.
+Минималистичная админ-панель на Next.js для таблицы `products` в Supabase. Она безопасно отображает HTML, позволяет редакторам обновлять описания через легкий редактор форматированного текста и подтверждать контент с помощью полей аудита.
 
-### Features
-- View `products` with pagination (50 per page) and a built‑in filter: only rows where `description_added = true` are listed
-- Safe HTML rendering for `short_description` and `description` (sanitized)
-- Inline rich‑text editor (contentEditable) with a small toolbar: Bold, Italic, Underline, H2, Paragraph, Ordered/Unordered lists, Link, Clear formatting
-- Live preview inside the editor modal; HTML is sanitized before saving
-- “Confirm description” action storing the current user email
-- Visual badges for PIM readiness and confirmation status
-- Supabase auth (email/password): login and logout
+### Возможности
 
-### Tech stack
-- Next.js (App Router, TypeScript, Tailwind CSS)
-- Supabase JS SDK
-- HTML sanitization: `isomorphic-dompurify`
+-   Просмотр таблицы `products` с пагинацией (50 записей на страницу) и встроенным фильтром: отображаются только строки, где `description_added = true`
+-   Просмотр продуктов, подтвержденных текущим пользователем, на специальной странице "Подтвержденные продукты"
+-   Панель статистики администратора для пользователей с особым доступом (настроенным в коде)
+-   Безопасное отображение HTML для полей `short_description` и `description` (с санитизацией)
+-   Встроенный редактор форматированного текста (contentEditable) с компактной панелью инструментов: Жирный, Курсив, Подчеркнутый, H2, Параграф, Упорядоченные/Неупорядоченные списки, Ссылка, Очистка форматирования
+-   Предварительный просмотр в реальном времени внутри модального окна редактора; HTML санитизируется перед сохранением
+-   Действие "Подтвердить описание" с сохранением email текущего пользователя
+-   Визуальные значки для готовности к PIM и статуса подтверждения
+-   Аутентификация Supabase (email/пароль): вход и выход
 
-### Getting started
-1) Install dependencies
+### Технический стек
+
+-   Next.js (App Router, TypeScript, Tailwind CSS)
+-   Supabase JS SDK
+-   HTML санитизация: `isomorphic-dompurify`
+
+### Начало работы
+
+1. Установка зависимостей
+
 ```bash
 npm i
 ```
-2) Create `.env.local`
+
+2. Создание файла `.env`
+
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=your_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_public_anon_key
 ```
-3) Run locally
+
+3. Локальный запуск
+
 ```bash
 npm run dev
 ```
-Open `http://localhost:3000`, sign in at `/login`, then go to `/admin`.
 
-### Database schema (products)
-Common columns used by the app include: `row_number`, `id` (PIM id), `uid` (uuid), `product_name`, `short_description`, `description`, `description_added`, `push_to_pim`.
+Откройте `http://localhost:3000`, войдите в систему на странице `/login`, затем перейдите на `/admin`, `/products` или `/approved-products`, чтобы увидеть ваши подтвержденные элементы
 
-This app also expects the following audit/approval columns. Run in Supabase SQL editor:
+### Схема базы данных (products)
+
+Основные столбцы, используемые приложением, включают: `row_number`, `id` (PIM id), `uid` (uuid), `product_name`, `short_description`, `description`, `description_added`, `push_to_pim`.
+
+Это приложение также ожидает следующие столбцы аудита/подтверждения. Запустите в SQL-редакторе Supabase:
+
 ```sql
--- 1) New columns
+-- 1) Новые столбцы
 alter table public.products
   add column if not exists created_at timestamptz not null default now(),
   add column if not exists updated_at timestamptz not null default now(),
   add column if not exists description_confirmed boolean not null default false,
   add column if not exists confirmed_by_email text;
 
--- 2) updated_at trigger
+-- 2) Триггер updated_at
 create or replace function public.set_updated_at()
 returns trigger
 language plpgsql
@@ -62,11 +75,24 @@ for each row
 execute function public.set_updated_at();
 ```
 
-### Using the editor
-- Click “Edit short description” or “Edit full description” on a product card
-- Use the toolbar to format text (Bold/Italic/Underline, H2/P, lists, link)
-- See changes in the live preview; click “Save” to persist
-- Click “Confirm description” to mark it approved; your email will be stored
+### Использование редактора
 
-### Favicon & branding
-The app uses `src/app/favicon.ico`. Replace it with your icon to update the favicon. The home page shows the company logo from `src/images/logo.png`.
+-   Нажмите "Редактировать краткое описание" или "Редактировать полное описание" на карточке продукта
+-   Используйте панель инструментов для форматирования текста (Жирный/Курсив/Подчеркнутый, H2/P, списки, ссылка)
+-   Просматривайте изменения в режиме реального времени; нажмите "Сохранить" для сохранения
+-   Нажмите "Подтвердить описание", чтобы отметить его как одобренное; ваш email будет сохранен
+-   Просматривайте все продукты, которые вы подтвердили, перейдя в "Мои подтверждения" в заголовке или напрямую по адресу `/approved-products`
+-   Пользователи-администраторы могут просматривать таблицу статистики, показывающую количество подтверждений для каждого пользователя
+
+### Favicon и брендинг
+
+Приложение использует `src/app/favicon.ico`. Замените его своим значком, чтобы обновить favicon. На главной странице отображается логотип компании из `src/images/logo.png`.
+
+### Функции администратора
+
+Для пользователей, чьи email-адреса включены в массив `ADMIN_EMAILS` в файле `src/app/approved-products/page.tsx`:
+
+-   Просмотр статистической панели в верхней части страницы "Подтвержденные продукты"
+-   Просмотр количества продуктов, подтвержденных каждым пользователем в системе
+-   Данные отсортированы по количеству подтверждений в порядке убывания
+-   Чтобы добавить больше администраторов, обновите массив `ADMIN_EMAILS` в исходном коде
