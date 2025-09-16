@@ -1,6 +1,5 @@
 export type Row = {
 	id: string | number;
-	row_number?: number | null;
 	uid?: string | null;
 	product_name?: string | null;
 	article?: string | null;
