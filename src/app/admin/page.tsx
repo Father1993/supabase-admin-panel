@@ -48,7 +48,7 @@ export default function AdminPage() {
         // Ищем свободную рандомную карточку
         const { data, error } = await supabase
           .from("products")
-          .select("row_number, id, uid, product_name, article, code_1c, short_description, description, description_added, push_to_pim, description_confirmed, confirmed_by_email, created_at, updated_at, locked_until")
+          .select("id, uid, product_name, article, code_1c, short_description, description, description_added, push_to_pim, description_confirmed, confirmed_by_email, created_at, updated_at, locked_until")
           .eq("description_added", true)
           .eq("description_confirmed", false)
           .or("locked_until.is.null,locked_until.lt." + new Date().toISOString())
