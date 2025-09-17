@@ -28,11 +28,9 @@ export function ProductImage({ productId, productName, className = "" }: Product
       setError(false);
       
       try {
-        console.log('[ProductImage] Загрузка изображения для товара:', productId);
         const data = await getProductImage(productId);
         setImageData(data);
-      } catch (error) {
-        console.error('[ProductImage] Ошибка загрузки изображения:', error);
+      } catch {
         setError(true);
       } finally {
         setLoading(false);
@@ -44,33 +42,39 @@ export function ProductImage({ productId, productName, className = "" }: Product
 
   if (loading) {
     return (
-      <div className={`bg-slate-100 rounded-lg flex items-center justify-center ${className}`}>
-        <div className="animate-pulse text-slate-400 text-sm">Загрузка...</div>
+      <div className={className}>
+        <div className="bg-slate-100 rounded-lg flex items-center justify-center" style={{ height: '200px' }}>
+          <div className="animate-pulse text-slate-400 text-sm">Загрузка...</div>
+        </div>
       </div>
     );
   }
 
   if (!imageData || error) {
     return (
-      <div className={`bg-slate-100 rounded-lg flex items-center justify-center ${className}`}>
-        <div className="text-slate-400 text-sm">Нет фото</div>
+      <div className={className}>
+        <div className="bg-slate-100 rounded-lg flex items-center justify-center" style={{ height: '200px' }}>
+          <div className="text-slate-400 text-sm">Нет фото</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className={`relative overflow-hidden rounded-lg ${className}`}>
-      <Image
-        src={imageData.url}
-        alt={productName || "Изображение товара"}
-        width={imageData.width}
-        height={imageData.height}
-        className="w-full h-full object-cover"
-        onError={() => setError(true)}
-        unoptimized
-      />
-      <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
-        {imageData.width}×{imageData.height} {imageData.type}
+    <div className={`relative ${className}`}>
+      <div className="bg-slate-100 rounded-lg overflow-hidden" style={{ height: '200px' }}>
+        <Image
+          src={imageData.url}
+          alt={productName || "Изображение товара"}
+          width={imageData.width}
+          height={imageData.height}
+          className="w-full h-full object-contain"
+          onError={() => setError(true)}
+          unoptimized
+        />
+      </div>
+      <div className="mt-2 text-center text-xs text-slate-500">
+        {imageData.width}×{imageData.height} пикс. • {imageData.type}
       </div>
     </div>
   );

@@ -295,54 +295,52 @@ export default function AdminPage() {
 
                             {/* Контент карточки */}
                             <div className="p-8">
-                                {/* Изображение товара */}
-                                <div className="mb-6">
-                                    <ProductImage 
-                                        productId={currentRow.id} 
-                                        productName={currentRow.product_name}
-                                        className="h-48 w-full"
-                                    />
-                                </div>
-                                
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                    {/* Краткое описание */}
-                                    {currentRow.short_description && (
-                                        <div className="space-y-4">
-                                            <div className="flex items-center space-x-2">
-                                                <div className="w-1 h-6 bg-gradient-to-b from-amber-400 to-orange-500 rounded-full"></div>
-                                                <h3 className="text-lg font-semibold text-slate-800">
-                                                    Краткое описание
-                                                </h3>
-                                                <span className="bg-amber-100 text-amber-700 text-xs px-2 py-1 rounded-full font-medium">
-                                                    AI Generated
-                                                </span>
+                                    {/* Левая колонка: изображение + краткое описание */}
+                                    <div className="space-y-6">
+                                        {/* Изображение товара */}
+                                        <ProductImage 
+                                            productId={currentRow.id} 
+                                            productName={currentRow.product_name}
+                                        />
+                                        
+                                        {/* Краткое описание */}
+                                        {currentRow.short_description && (
+                                            <div className="space-y-4">
+                                                <div className="flex items-center space-x-2">
+                                                    <div className="w-1 h-6 bg-gradient-to-b from-amber-400 to-orange-500 rounded-full"></div>
+                                                    <h3 className="text-lg font-semibold text-slate-800">
+                                                        Краткое описание
+                                                    </h3>
+                                                    <span className="bg-amber-100 text-amber-700 text-xs px-2 py-1 rounded-full font-medium">
+                                                        AI Generated
+                                                    </span>
+                                                </div>
+                                                <div className="bg-amber-50 border border-amber-200 rounded-lg p-6">
+                                                    <SafeHtml
+                                                        html={currentRow.short_description}
+                                                        className="rich-html rich-html-compact"
+                                                    />
+                                                </div>
+                                                <div className="flex gap-3">
+                                                    <button
+                                                        onClick={() =>
+                                                            openEditor(
+                                                                currentRow,
+                                                                'short_description'
+                                                            )
+                                                        }
+                                                        className="px-3 py-2 text-sm font-medium text-slate-700 bg-slate-100 border border-slate-300 rounded-lg hover:bg-slate-200"
+                                                    >
+                                                        Редактировать краткое
+                                                        описание
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <div className="bg-amber-50 border border-amber-200 rounded-lg p-6">
-                                                <SafeHtml
-                                                    html={
-                                                        currentRow.short_description
-                                                    }
-                                                    className="rich-html rich-html-compact"
-                                                />
-                                            </div>
-                                            <div className="flex gap-3">
-                                                <button
-                                                    onClick={() =>
-                                                        openEditor(
-                                                            currentRow,
-                                                            'short_description'
-                                                        )
-                                                    }
-                                                    className="px-3 py-2 text-sm font-medium text-slate-700 bg-slate-100 border border-slate-300 rounded-lg hover:bg-slate-200"
-                                                >
-                                                    Редактировать краткое
-                                                    описание
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
+                                        )}
+                                    </div>
 
-                                    {/* Полное описание */}
+                                    {/* Правая колонка: полное описание */}
                                     {currentRow.description && (
                                         <div className="space-y-4">
                                             <div className="flex items-center space-x-2">
@@ -356,9 +354,7 @@ export default function AdminPage() {
                                             </div>
                                             <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-6">
                                                 <SafeHtml
-                                                    html={
-                                                        currentRow.description
-                                                    }
+                                                    html={currentRow.description}
                                                     className="rich-html rich-html-detailed"
                                                 />
                                             </div>

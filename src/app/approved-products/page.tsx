@@ -318,32 +318,33 @@ export default function ApprovedProductsPage() {
 
                                 {/* Изображение и описания */}
                                 <div className="p-6">
-                                    {/* Изображение товара */}
-                                    <div className="mb-6">
-                                        <ProductImage 
-                                            productId={product.id} 
-                                            productName={product.product_name}
-                                            className="h-48 w-full"
-                                        />
-                                    </div>
-                                    
                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                        {product.short_description && (
-                                            <div className="space-y-3">
-                                                <h4 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-                                                    <div className="w-1 h-5 bg-amber-400 rounded-full"></div>
-                                                    Краткое описание
-                                                </h4>
-                                                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                                                    <SafeHtml
-                                                        html={
-                                                            product.short_description
-                                                        }
-                                                        className="rich-html rich-html-compact"
-                                                    />
+                                        {/* Левая колонка: изображение + краткое описание */}
+                                        <div className="space-y-6">
+                                            {/* Изображение товара */}
+                                            <ProductImage 
+                                                productId={product.id} 
+                                                productName={product.product_name}
+                                            />
+                                            
+                                            {/* Краткое описание */}
+                                            {product.short_description && (
+                                                <div className="space-y-3">
+                                                    <h4 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                                                        <div className="w-1 h-5 bg-amber-400 rounded-full"></div>
+                                                        Краткое описание
+                                                    </h4>
+                                                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                                                        <SafeHtml
+                                                            html={product.short_description}
+                                                            className="rich-html rich-html-compact"
+                                                        />
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        )}
+                                            )}
+                                        </div>
+
+                                        {/* Правая колонка: полное описание */}
                                         {product.description && (
                                             <div className="space-y-3">
                                                 <h4 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
@@ -352,9 +353,7 @@ export default function ApprovedProductsPage() {
                                                 </h4>
                                                 <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
                                                     <SafeHtml
-                                                        html={
-                                                            product.description
-                                                        }
+                                                        html={product.description}
                                                         className="rich-html rich-html-detailed"
                                                     />
                                                 </div>
