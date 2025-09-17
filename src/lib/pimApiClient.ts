@@ -82,14 +82,15 @@ export async function getProductImage(productId: string | number): Promise<{url:
     console.log('🖼️ Данные изображения:', picture);
 
     if (picture && picture.name) {
-      const imageUrl = `https://pim.uroven.pro/pictures/originals/${picture.name}.${picture.type}`;
+      const type = picture.type?.toUpperCase() || 'noType';
+      const imageUrl = `https://pim.uroven.pro/pictures/originals/${picture.name}.${type}`;
       console.log('✅ Формируем URL изображения:', imageUrl);
       
       return {
         url: imageUrl,
         width: picture.sizeX || 400,
         height: picture.sizeY || 300,
-        type: picture.type || 'jpg'
+        type: picture.type || 'noType'
       };
     } else {
       console.log('❌ У товара нет изображения или неверная структура данных');
