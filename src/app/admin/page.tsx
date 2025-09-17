@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabaseClient'
 import { SafeHtml } from '@/components/SafeHtml'
 import { Row } from '@/types/products'
 import { Header } from '@/components/Header'
-
+import { ProductImage } from '@/components/ProductImage'
 import { RichTextEditorModal } from '@/components/RichTextEditorModal'
 
 export default function AdminPage() {
@@ -295,6 +295,15 @@ export default function AdminPage() {
 
                             {/* Контент карточки */}
                             <div className="p-8">
+                                {/* Изображение товара */}
+                                <div className="mb-6">
+                                    <ProductImage 
+                                        productId={currentRow.id} 
+                                        productName={currentRow.product_name}
+                                        className="h-48 w-full"
+                                    />
+                                </div>
+                                
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                                     {/* Краткое описание */}
                                     {currentRow.short_description && (

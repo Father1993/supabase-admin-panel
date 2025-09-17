@@ -6,6 +6,7 @@ import { SafeHtml } from '@/components/SafeHtml'
 import { Row } from '@/types/products'
 import { Header } from '@/components/Header'
 import { PaginationBar } from '@/components/PaginationBar'
+import { ProductImage } from '@/components/ProductImage'
 
 // Список email-адресов пользователей, имеющих доступ к статистике
 // Для добавления нового пользователя просто добавьте его email в этот массив
@@ -315,8 +316,17 @@ export default function ApprovedProductsPage() {
                                     </div>
                                 </div>
 
-                                {/* Описания */}
+                                {/* Изображение и описания */}
                                 <div className="p-6">
+                                    {/* Изображение товара */}
+                                    <div className="mb-6">
+                                        <ProductImage 
+                                            productId={product.id} 
+                                            productName={product.product_name}
+                                            className="h-48 w-full"
+                                        />
+                                    </div>
+                                    
                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                         {product.short_description && (
                                             <div className="space-y-3">

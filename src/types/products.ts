@@ -14,4 +14,5 @@ export type Row = {
     updated_at?: string | null
     locked_until?: string | null
     link_pim?: string
+    image_url?: string | null
 }
