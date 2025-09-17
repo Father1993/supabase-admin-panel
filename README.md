@@ -1,98 +1,186 @@
-## Uroven Admin — simple Supabase admin for one table
+## Product Management Admin Panel
 
-Minimal Next.js admin panel for the `products` table in Supabase. It renders HTML safely, lets editors update descriptions through a lightweight rich‑text editor, and confirm content with audit fields.
+A comprehensive Next.js admin panel for managing product descriptions with image support, content editing, and approval workflows. Built for teams that need to review, edit, and approve product content before publication.
 
-### Features
+### Core Features
 
--   View `products` with pagination (50 per page) and a built‑in filter: only rows where `description_added = true` are listed
--   View products confirmed by current user on the dedicated "Approved Products" page
--   Admin statistics dashboard for users with special access (configured in the code)
--   Safe HTML rendering for `short_description` and `description` (sanitized)
--   Inline rich‑text editor (contentEditable) with a small toolbar: Bold, Italic, Underline, H2, Paragraph, Ordered/Unordered lists, Link, Clear formatting
--   Live preview inside the editor modal; HTML is sanitized before saving
--   "Confirm description" action storing the current user email
--   Visual badges for PIM readiness and confirmation status
--   Supabase auth (email/password): login and logout
+**Product Management**
+- View all products with AI-generated descriptions and images
+- Pagination support (50 products per page) with sorting options
+- Real-time product images loaded directly from database
+- Visual status indicators for PIM integration and approval status
+- Direct links to external PIM system for product verification
 
-### Tech stack
+**Content Editing**
+- Rich text editor with toolbar: Bold, Italic, Underline, Headers, Lists, Links
+- Live preview with HTML sanitization for security
+- Edit both short and full product descriptions
+- Auto-save functionality with error handling
+- Content validation and sanitization before database storage
 
--   Next.js (App Router, TypeScript, Tailwind CSS)
--   Supabase JS SDK
--   HTML sanitization: `isomorphic-dompurify`
+**Approval Workflow**
+- Random product assignment system to prevent conflicts
+- 5-minute locking mechanism to prevent simultaneous editing
+- One-click approval with user email tracking
+- Automatic cleanup of expired locks
+- Progress tracking showing remaining products to confirm
 
-### Getting started
+**User Management**
+- Supabase authentication (email/password)
+- Role-based access control
+- Personal dashboard showing user's confirmed products
+- Admin statistics for team performance tracking
 
-1. Install dependencies
+**Image Management**
+- Automatic product image loading from database URLs
+- Fallback handling for missing images
+- Responsive image display with proper aspect ratios
+- Error handling for broken image links
 
+### Pages & Navigation
+
+**Admin Page (`/admin`)**
+- Random product assignment for review
+- Content editing interface
+- Approval workflow controls
+- Real-time progress tracking
+
+**Products Page (`/products`)**
+- Browse all products with descriptions
+- Pagination and sorting controls
+- Status filtering and search
+- Bulk operations support
+
+**Approved Products (`/approved-products`)**
+- Personal dashboard of confirmed products
+- Admin statistics (for authorized users)
+- Performance metrics and user activity
+- Export and reporting capabilities
+
+**Login Page (`/login`)**
+- Secure authentication
+- Session management
+- Automatic redirect handling
+
+### Technical Stack
+
+- **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS
+- **Backend**: Supabase (PostgreSQL, Auth, Real-time)
+- **Security**: HTML sanitization with DOMPurify
+- **Deployment**: Docker containerization with Traefik reverse proxy
+- **Image Handling**: Next.js Image optimization with fallbacks
+
+### Database Schema
+
+The application works with a `products` table containing:
+
+**Core Product Data**
+- `id`, `uid`, `product_name`, `article`, `code_1c`
+- `short_description`, `description` (HTML content)
+- `image_url` (direct image links)
+
+**Workflow Management**
+- `description_added` (boolean)
+- `description_confirmed` (boolean)
+- `confirmed_by_email` (text)
+- `locked_until` (timestamp)
+
+**Audit Trail**
+- `created_at`, `updated_at` (timestamps)
+- `push_to_pim` (integration status)
+- `link_pim` (external system links)
+
+### Getting Started
+
+1. **Install Dependencies**
 ```bash
-npm i
+npm install
 ```
 
-2. Create `.env`
-
+2. **Environment Setup**
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=your_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_public_anon_key
+# Create .env.local
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-3. Run locally
+3. **Database Setup**
+```sql
+-- Add required columns to products table
+ALTER TABLE public.products
+  ADD COLUMN IF NOT EXISTS image_url text,
+  ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now(),
+  ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now(),
+  ADD COLUMN IF NOT EXISTS description_confirmed boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS confirmed_by_email text,
+  ADD COLUMN IF NOT EXISTS locked_until timestamptz;
 
+-- Create update trigger
+CREATE OR REPLACE FUNCTION public.set_updated_at()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_set_updated_at
+  BEFORE UPDATE ON public.products
+  FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+```
+
+4. **Run Development Server**
 ```bash
 npm run dev
 ```
 
-Open `http://localhost:3000`, sign in at `/login`, then go to `/admin`, `/products`, or `/approved-products` to see your confirmed items
+5. **Access Application**
+- Open `http://localhost:3000`
+- Login at `/login`
+- Navigate to `/admin` for product review
+- Use `/products` to browse all items
+- Check `/approved-products` for personal dashboard
 
-### Database schema (products)
+### Docker Deployment
 
-Common columns used by the app include: `row_number`, `id` (PIM id), `uid` (uuid), `product_name`, `short_description`, `description`, `description_added`, `push_to_pim`.
-
-This app also expects the following audit/approval columns. Run in Supabase SQL editor:
-
-```sql
--- 1) New columns
-alter table public.products
-  add column if not exists created_at timestamptz not null default now(),
-  add column if not exists updated_at timestamptz not null default now(),
-  add column if not exists description_confirmed boolean not null default false,
-  add column if not exists confirmed_by_email text;
-
--- 2) updated_at trigger
-create or replace function public.set_updated_at()
-returns trigger
-language plpgsql
-as $$
-begin
-  new.updated_at = now();
-  return new;
-end;
-$$;
-
-drop trigger if exists trg_set_updated_at on public.products;
-create trigger trg_set_updated_at
-before update on public.products
-for each row
-execute function public.set_updated_at();
+**Build and Run**
+```bash
+docker-compose up -d
 ```
 
-### Using the editor
+**Environment Variables**
+```bash
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_key
+```
 
--   Click “Edit short description” or “Edit full description” on a product card
--   Use the toolbar to format text (Bold/Italic/Underline, H2/P, lists, link)
--   See changes in the live preview; click “Save” to persist
--   Click "Confirm description" to mark it approved; your email will be stored
--   View all products you've confirmed by navigating to "Мои подтверждения" in the header or `/approved-products` directly
--   Admin users can view a statistics table showing confirmation counts for each user
+### User Roles & Permissions
 
-### Favicon & branding
+**Standard Users**
+- Review and edit product descriptions
+- Approve content with email tracking
+- View personal confirmation history
+- Access product images and metadata
 
-The app uses `src/app/favicon.ico`. Replace it with your icon to update the favicon. The home page shows the company logo from `src/images/logo.png`.
+**Admin Users**
+- All standard user permissions
+- Access to team statistics dashboard
+- View confirmation counts by user
+- Monitor team performance metrics
 
-### Admin Features
+### Security Features
 
-For users whose email addresses are included in the `ADMIN_EMAILS` array in `src/app/approved-products/page.tsx`:
+- HTML content sanitization prevents XSS attacks
+- User authentication with Supabase
+- Row-level security policies
+- Input validation and error handling
+- Secure image loading with fallbacks
+- Session management and auto-logout
 
--   View a statistical dashboard at the top of the "Approved Products" page
--   See counts of products confirmed by each user in the system
--   Data is sorted by confirmation count in descending order
--   To add more administrators, update the `ADMIN_EMAILS` array in the source code
+### Performance Optimizations
+
+- Image optimization with Next.js Image component
+- Database query optimization with pagination
+- Client-side caching for better UX
+- Efficient state management
+- Minimal bundle size with tree shaking
