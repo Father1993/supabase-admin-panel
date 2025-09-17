@@ -294,6 +294,16 @@ export default function ApprovedProductsPage() {
                                                 <span className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-medium">
                                                     ✓ Подтверждено вами
                                                 </span>
+                                                {product.link_pim && (
+                                                <a
+                                                    href={product.link_pim}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-medium hover:bg-blue-200"
+                                                >
+                                                    Открыть в PIM ↗
+                                                </a>
+                                                )}
                                             </div>
                                         </div>
                                         <div className="text-sm text-slate-500">

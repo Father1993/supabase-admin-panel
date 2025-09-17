@@ -53,7 +53,7 @@ export default function AdminPage() {
                 const { data, error } = await supabase
                     .from('products')
                     .select(
-                        'id, uid, product_name, article, code_1c, short_description, description, description_added, push_to_pim, description_confirmed, confirmed_by_email, created_at, updated_at, locked_until'
+                        'id, uid, product_name, article, code_1c, short_description, description, description_added, push_to_pim, description_confirmed, confirmed_by_email, created_at, updated_at, locked_until, link_pim'
                     )
                     .eq('description_added', true)
                     .eq('description_confirmed', false)
@@ -275,6 +275,16 @@ export default function AdminPage() {
                                                         : 'Не загружен'}
                                                 </span>
                                             )}
+                                              {currentRow.link_pim && (
+                                                <a
+                                                    href={currentRow.link_pim}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-medium hover:bg-blue-200"
+                                                >
+                                                    Открыть в PIM ↗
+                                                </a>
+                                                )}
                                             <span className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full font-medium text-xs">
                                                 🔒 Заблокировано для вас
                                             </span>
@@ -460,7 +470,6 @@ export default function AdminPage() {
                             Все товары уже обработаны или заблокированы другими
                             пользователями
                         </p>
-                        {/* Кнопка ручной перезагрузки удалена */}
                     </div>
                 )}
             </div>

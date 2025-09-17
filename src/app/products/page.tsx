@@ -137,6 +137,16 @@ export default function ProductsPage() {
                             PIM: {product.push_to_pim ? "✓ Загружен" : "Не загружен"}
                           </span>
                         )}
+                        {product.link_pim && (
+                          <a
+                            href={product.link_pim}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-medium hover:bg-blue-200"
+                          >
+                            Открыть в PIM ↗
+                          </a>
+                        )}
                         {product.description_confirmed && (
                           <span className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-medium">
                             ✓ Подтверждено
