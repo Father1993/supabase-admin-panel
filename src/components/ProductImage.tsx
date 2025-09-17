@@ -14,13 +14,20 @@ export function ProductImage({ productId, productName, className = "" }: Product
 
   useEffect(() => {
     const fetchImage = async () => {
+      console.log('🖼️ ProductImage: начинаем загрузку для товара', productId);
       setLoading(true);
       setError(false);
       
       try {
         const data = await getProductImage(productId);
+        console.log('🖼️ ProductImage: получены данные изображения', data);
         setImageData(data);
-      } catch {
+        
+        if (!data) {
+          console.log('⚠️ ProductImage: данные изображения отсутствуют');
+        }
+      } catch (error) {
+        console.log('❌ ProductImage: ошибка загрузки изображения', error);
         setError(true);
       } finally {
         setLoading(false);
@@ -59,7 +66,10 @@ export function ProductImage({ productId, productName, className = "" }: Product
           width={imageData.width}
           height={imageData.height}
           className="w-full h-full object-contain"
-          onError={() => setError(true)}
+          onError={() => {
+            console.log('❌ ProductImage: ошибка загрузки изображения по URL:', imageData.url);
+            setError(true);
+          }}
           unoptimized
         />
       </div>
