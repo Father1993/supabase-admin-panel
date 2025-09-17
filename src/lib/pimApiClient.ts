@@ -35,7 +35,7 @@ async function getPimAuthToken(): Promise<string | null> {
       return authToken;
     }
   } catch {
-    // Игнорируем ошибки
+      console.log('Ошибка получения токена авторизации')
   }
   
   return null;
@@ -56,17 +56,18 @@ export async function getProductImage(productId: string | number): Promise<{url:
 
     const data = await response.json();
     const picture = data.data?.picture;
+    const type = picture.type.toUpperCase();
 
     if (picture && picture.name) {
       return {
-        url: `https://pim.uroven.pro/pictures/originals/${picture.name}.JPG`,
+        url: `https://pim.uroven.pro/pictures/originals/${picture.name}.${type}`,
         width: picture.sizeX,
         height: picture.sizeY,
         type: picture.type
       };
     }
   } catch {
-    // Игнорируем ошибки
+    console.log('Ошибка получения изображения товара:', productId)
   }
   
   return null;

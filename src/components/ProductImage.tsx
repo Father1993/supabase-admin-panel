@@ -3,19 +3,9 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { getProductImage } from "@/lib/pimApiClient";
+import { ProductImageProps, ImageData } from "@/types/main";
 
-type ProductImageProps = {
-  productId: string | number;
-  productName?: string | null;
-  className?: string;
-};
 
-type ImageData = {
-  url: string;
-  width: number;
-  height: number;
-  type: string;
-};
 
 export function ProductImage({ productId, productName, className = "" }: ProductImageProps) {
   const [imageData, setImageData] = useState<ImageData | null>(null);
