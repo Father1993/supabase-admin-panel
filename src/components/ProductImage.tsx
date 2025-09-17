@@ -1,16 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
-
-type ProductImageProps = {
-  imageUrl?: string | null;
-  productName?: string | null;
-  className?: string;
-};
+import { ProductImageProps } from "@/types/main";
 
 export function ProductImage({ imageUrl, productName, className = "" }: ProductImageProps) {
   const [error, setError] = useState(false);
+  const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null);
+
+  useEffect(() => {
+    if (!imageUrl) return;
+    
+    const img = new window.Image();
+    img.onload = () => setDimensions({ width: img.naturalWidth, height: img.naturalHeight });
+    img.onerror = () => setError(true);
+    img.src = imageUrl;
+  }, [imageUrl]);
 
   if (!imageUrl || error) {
     return (
@@ -28,13 +33,18 @@ export function ProductImage({ imageUrl, productName, className = "" }: ProductI
         <Image
           src={imageUrl}
           alt={productName || "Изображение товара"}
-          width={800}
-          height={600}
+          width={dimensions?.width || 800}
+          height={dimensions?.height || 600}
           className="w-full h-full object-contain"
           onError={() => setError(true)}
           unoptimized
         />
       </div>
+      {dimensions && (
+        <div className="mt-2 text-center text-xs text-slate-500">
+          {dimensions.width}×{dimensions.height} px
+        </div>
+      )}
     </div>
   );
 }
