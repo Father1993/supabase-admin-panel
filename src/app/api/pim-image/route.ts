@@ -77,13 +77,14 @@ export async function GET(request: NextRequest) {
 
     const data = await response.json()
     const picture = data.data?.picture
+    const type = picture.type.toUpperCase()
 
     if (picture && picture.name) {
       const imageData = {
-        url: `https://pim.uroven.pro/pictures/originals/${picture.name}.JPG`,
+        url: `https://pim.uroven.pro/pictures/originals/${picture.name}.${type}`,
         width: picture.sizeX,
         height: picture.sizeY,
-        type: picture.type
+        type: type || 'noType'
       }
       
       return NextResponse.json(imageData)
