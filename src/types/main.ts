@@ -5,3 +5,9 @@ export type PaginationProps = {
     onPageChange: (p: number) => void;
     remainingToConfirm?: number;
   };
+
+  export type ProductImageProps = {
+    imageUrl?: string | null;
+    productName?: string | null;
+    className?: string;
+  };
