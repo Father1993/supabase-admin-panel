@@ -27,12 +27,11 @@ deploy:
     - ssh -v -o StrictHostKeyChecking=yes admin@$SERVER_HOST "
         cd /opt/supabase-admin-panel &&
         echo '🔁 Получаем последние изменения...' &&
-        git fetch origin main &&
         git pull origin main &&
-        echo '🛑 Останавливаем контейнеры...' &&
-        docker compose down &&
         echo '🛠️ Пересобираем образы...' &&
         docker compose build --no-cache &&
+        echo '🛑 Останавливаем контейнеры...' &&
+         docker compose down &&
         echo '🚀 Запускаем сервисы...' &&
         docker compose up -d
       "
