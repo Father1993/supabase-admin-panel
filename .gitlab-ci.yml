@@ -5,16 +5,20 @@ deploy:
   stage: deploy
   script:
     # Установка SSH-клиента (если ещё не установлен)
-    - 'which ssh-agent || ( apt-get update -qq && apt-get install -y openssh-client )'
+    - 'which ssh-agent || ( apt-get update -qq && apt-get install -y openssh-client git )'
 
     # Запуск агента
     - eval $(ssh-agent -s)
+
+    # Создания .ssh directory
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
 
     # Добавляем приватный ключ из переменной GitLab
     - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
     - chmod 600 ~/.ssh/id_ed25519
 
-    # Добавляем хост в known_hosts (чтобы не было вопросов при подключении)
+    # Добавляем хост в known_hosts
     - mkdir -p ~/.ssh
     - ssh-keyscan -H $SERVER_HOST >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
