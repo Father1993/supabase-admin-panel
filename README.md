@@ -7,6 +7,8 @@ A comprehensive Next.js admin panel for managing product descriptions with image
 **Product Management**
 - View all products with AI-generated descriptions and images
 - Pagination support (50 products per page) with sorting options
+- Real-time product search with autocomplete (by name, ID, article, 1C code)
+- Product filtering and single-item view mode
 - Real-time product images loaded directly from database
 - Visual status indicators for PIM integration and approval status
 - Direct links to external PIM system for product verification
@@ -21,7 +23,8 @@ A comprehensive Next.js admin panel for managing product descriptions with image
 **Approval Workflow**
 - Random product assignment system to prevent conflicts
 - 5-minute locking mechanism to prevent simultaneous editing
-- One-click approval with user email tracking
+- One-click approval and rejection with user email tracking
+- Product rejection system with `is_rejected` flag for quality control
 - Automatic cleanup of expired locks
 - Progress tracking showing remaining products to confirm
 
@@ -41,15 +44,17 @@ A comprehensive Next.js admin panel for managing product descriptions with image
 
 **Admin Page (`/admin`)**
 - Random product assignment for review
-- Content editing interface
-- Approval workflow controls
+- Content editing interface with rich text editor
+- Approval and rejection workflow controls
 - Real-time progress tracking
+- Product rejection system for quality control
 
 **Products Page (`/products`)**
 - Browse all products with descriptions
-- Pagination and sorting controls
-- Status filtering and search
-- Bulk operations support
+- Real-time search with autocomplete dropdown
+- Product filtering and single-item view mode
+- Pagination and sorting controls (hidden when filtering)
+- Status indicators and metadata display
 
 **Approved Products (`/approved-products`)**
 - Personal dashboard of confirmed products
@@ -70,6 +75,23 @@ A comprehensive Next.js admin panel for managing product descriptions with image
 - **Deployment**: Docker containerization with Traefik reverse proxy
 - **Image Handling**: Next.js Image optimization with fallbacks
 
+### Key Components
+
+**Reusable UI Components**
+- `ProductHeader` - Unified product card headers with metadata display
+- `ProductSearch` - Real-time search with autocomplete dropdown
+- `ProductImage` - Optimized image display with fallback handling
+- `RejectButton` - Product rejection functionality
+- `PaginationBar` - Pagination controls with progress indicators
+- `RichTextEditorModal` - Content editing with HTML sanitization
+- `SafeHtml` - Secure HTML rendering component
+
+**Responsive Design**
+- Mobile-first approach with adaptive navigation
+- Collapsible mobile menu with smooth animations
+- Touch-friendly interface elements
+- Optimized layouts for all screen sizes
+
 ### Database Schema
 
 The application works with a `products` table containing:
@@ -84,6 +106,7 @@ The application works with a `products` table containing:
 - `description_confirmed` (boolean)
 - `confirmed_by_email` (text)
 - `locked_until` (timestamp)
+- `is_rejected` (boolean) - Product rejection flag for quality control
 
 **Audit Trail**
 - `created_at`, `updated_at` (timestamps)
@@ -113,7 +136,8 @@ ALTER TABLE public.products
   ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now(),
   ADD COLUMN IF NOT EXISTS description_confirmed boolean NOT NULL DEFAULT false,
   ADD COLUMN IF NOT EXISTS confirmed_by_email text,
-  ADD COLUMN IF NOT EXISTS locked_until timestamptz;
+  ADD COLUMN IF NOT EXISTS locked_until timestamptz,
+  ADD COLUMN IF NOT EXISTS is_rejected boolean NOT NULL DEFAULT false;
 
 -- Create update trigger
 CREATE OR REPLACE FUNCTION public.set_updated_at()
@@ -158,7 +182,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_key
 
 **Standard Users**
 - Review and edit product descriptions
-- Approve content with email tracking
+- Approve or reject content with email tracking
+- Search and filter products with real-time autocomplete
 - View personal confirmation history
 - Access product images and metadata
 
@@ -180,7 +205,9 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_key
 ### Performance Optimizations
 
 - Image optimization with Next.js Image component
-- Database query optimization with pagination
+- Database query optimization with pagination and search indexing
+- Real-time search with debounced API calls
 - Client-side caching for better UX
-- Efficient state management
+- Efficient state management with React hooks
 - Minimal bundle size with tree shaking
+- Responsive design with mobile-first approach

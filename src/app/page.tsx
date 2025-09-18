@@ -64,7 +64,7 @@ export default function Home() {
                                 href="/admin"
                                 className="px-5 py-3 rounded-lg border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 transition"
                             >
-                                В админку
+                                Начать проверку текстов
                             </Link>
                             <Link
                                 href="/products"

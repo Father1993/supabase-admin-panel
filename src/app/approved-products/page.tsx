@@ -7,6 +7,7 @@ import { Row } from '@/types/products'
 import { Header } from '@/components/Header'
 import { PaginationBar } from '@/components/PaginationBar'
 import { ProductImage } from '@/components/ProductImage'
+import { ProductHeader } from '@/components/ProductHeader'
 
 // Список email-адресов пользователей, имеющих доступ к статистике
 // Для добавления нового пользователя просто добавьте его email в этот массив
@@ -230,91 +231,14 @@ export default function ApprovedProductsPage() {
                                 className="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden"
                             >
                                 {/* Заголовок */}
-                                <div className="bg-gradient-to-r from-slate-50 to-blue-50 px-6 py-4 border-b">
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            {product.product_name && (
-                                                <h3 className="text-xl font-bold text-slate-900 mb-2">
-                                                    {product.product_name}
-                                                </h3>
-                                            )}
-                                            <div className="flex flex-wrap gap-4 text-sm">
-                                                <span className="bg-slate-100 px-3 py-1 rounded-full">
-                                                    <span className="text-slate-500 font-medium">
-                                                        ID:
-                                                    </span>
-                                                    <span className="text-slate-800 ml-1">
-                                                        {String(product.id)}
-                                                    </span>
-                                                </span>
-                                                {product.uid && (
-                                                    <span className="bg-blue-100 px-3 py-1 rounded-full">
-                                                        <span className="text-blue-600 font-medium">
-                                                            UID:
-                                                        </span>
-                                                        <span className="text-blue-800 ml-1">
-                                                            {product.uid}
-                                                        </span>
-                                                    </span>
-                                                )}
-                                                {product.article && (
-                                                    <span className="bg-violet-100 px-3 py-1 rounded-full">
-                                                        <span className="text-violet-600 font-medium">
-                                                            Артикул:
-                                                        </span>
-                                                        <span className="text-violet-800 ml-1">
-                                                            {product.article}
-                                                        </span>
-                                                    </span>
-                                                )}
-                                                {product.code_1c && (
-                                                    <span className="bg-teal-100 px-3 py-1 rounded-full">
-                                                        <span className="text-teal-600 font-medium">
-                                                            Код 1С:
-                                                        </span>
-                                                        <span className="text-teal-800 ml-1">
-                                                            {product.code_1c}
-                                                        </span>
-                                                    </span>
-                                                )}
-                                                {typeof product.push_to_pim ===
-                                                    'boolean' && (
-                                                    <span
-                                                        className={`px-3 py-1 rounded-full font-medium ${
-                                                            product.push_to_pim
-                                                                ? 'bg-green-100 text-green-800'
-                                                                : 'bg-gray-100 text-gray-600'
-                                                        }`}
-                                                    >
-                                                        PIM:{' '}
-                                                        {product.push_to_pim
-                                                            ? '✓ Загружен'
-                                                            : 'Не загружен'}
-                                                    </span>
-                                                )}
-                                                <span className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-medium">
-                                                    ✓ Подтверждено вами
-                                                </span>
-                                                {product.link_pim && (
-                                                <a
-                                                    href={product.link_pim}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-medium hover:bg-blue-200"
-                                                >
-                                                    Открыть в PIM ↗
-                                                </a>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <div className="text-sm text-slate-500">
-                                            {product.updated_at &&
-                                                new Date(
-                                                    product.updated_at
-                                                ).toLocaleDateString('ru')}
-                                        </div>
-                                    </div>
-                                </div>
+                                <ProductHeader 
+                                    product={product}
+                                    additionalBadges={[
+                                        <span key="confirmed" className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-medium">
+                                            ✓ Подтверждено вами
+                                        </span>
+                                    ]}
+                                />
 
                                 {/* Изображение и описания */}
                                 <div className="p-6">
