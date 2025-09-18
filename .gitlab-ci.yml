@@ -1,0 +1,36 @@
+stages:
+  - deploy
+
+deploy:
+  stage: deploy
+  script:
+    # Установка SSH-клиента (если ещё не установлен)
+    - 'which ssh-agent || ( apt-get update -qq && apt-get install -y openssh-client )'
+
+    # Запуск агента
+    - eval $(ssh-agent -s)
+
+    # Добавляем приватный ключ из переменной GitLab
+    - echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+    - chmod 600 ~/.ssh/id_ed25519
+
+    # Добавляем хост в known_hosts (чтобы не было вопросов при подключении)
+    - mkdir -p ~/.ssh
+    - ssh-keyscan -H $SERVER_HOST >> ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts
+
+    # Выполняем команды на сервере
+    - ssh -o StrictHostKeyChecking=yes admin@$SERVER_HOST "
+        cd /opt/supabase-admin-panel &&
+        echo '🔁 Получаем последние изменения...' &&
+        git fetch origin main &&
+        git pull origin main &&
+        echo '🛑 Останавливаем контейнеры...' &&
+        docker compose down &&
+        echo '🛠️ Пересобираем образы...' &&
+        docker compose build --no-cache &&
+        echo '🚀 Запускаем сервисы...' &&
+        docker compose up -d
+      "
+  only:
+    - main
