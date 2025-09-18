@@ -1,98 +1,213 @@
-## Uroven Admin — простая админ-панель Supabase для одной таблицы
+## Product Management Admin Panel
 
-Минималистичная админ-панель на Next.js для таблицы `products` в Supabase. Она безопасно отображает HTML, позволяет редакторам обновлять описания через легкий редактор форматированного текста и подтверждать контент с помощью полей аудита.
+A comprehensive Next.js admin panel for managing product descriptions with image support, content editing, and approval workflows. Built for teams that need to review, edit, and approve product content before publication.
 
-### Возможности
+### Core Features
 
--   Просмотр таблицы `products` с пагинацией (50 записей на страницу) и встроенным фильтром: отображаются только строки, где `description_added = true`
--   Просмотр продуктов, подтвержденных текущим пользователем, на специальной странице "Подтвержденные продукты"
--   Панель статистики администратора для пользователей с особым доступом (настроенным в коде)
--   Безопасное отображение HTML для полей `short_description` и `description` (с санитизацией)
--   Встроенный редактор форматированного текста (contentEditable) с компактной панелью инструментов: Жирный, Курсив, Подчеркнутый, H2, Параграф, Упорядоченные/Неупорядоченные списки, Ссылка, Очистка форматирования
--   Предварительный просмотр в реальном времени внутри модального окна редактора; HTML санитизируется перед сохранением
--   Действие "Подтвердить описание" с сохранением email текущего пользователя
--   Визуальные значки для готовности к PIM и статуса подтверждения
--   Аутентификация Supabase (email/пароль): вход и выход
+**Product Management**
+- View all products with AI-generated descriptions and images
+- Pagination support (50 products per page) with sorting options
+- Real-time product search with autocomplete (by name, ID, article, 1C code)
+- Product filtering and single-item view mode
+- Real-time product images loaded directly from database
+- Visual status indicators for PIM integration and approval status
+- Direct links to external PIM system for product verification
 
-### Технический стек
+**Content Editing**
+- Rich text editor with toolbar: Bold, Italic, Underline, Headers, Lists, Links
+- Live preview with HTML sanitization for security
+- Edit both short and full product descriptions
+- Auto-save functionality with error handling
+- Content validation and sanitization before database storage
 
--   Next.js (App Router, TypeScript, Tailwind CSS)
--   Supabase JS SDK
--   HTML санитизация: `isomorphic-dompurify`
+**Approval Workflow**
+- Random product assignment system to prevent conflicts
+- 5-minute locking mechanism to prevent simultaneous editing
+- One-click approval and rejection with user email tracking
+- Product rejection system with `is_rejected` flag for quality control
+- Automatic cleanup of expired locks
+- Progress tracking showing remaining products to confirm
 
-### Начало работы
+**User Management**
+- Supabase authentication (email/password)
+- Role-based access control
+- Personal dashboard showing user's confirmed products
+- Admin statistics for team performance tracking
 
-1. Установка зависимостей
+**Image Management**
+- Automatic product image loading from database URLs
+- Fallback handling for missing images
+- Responsive image display with proper aspect ratios
+- Error handling for broken image links
 
+### Pages & Navigation
+
+**Admin Page (`/admin`)**
+- Random product assignment for review
+- Content editing interface with rich text editor
+- Approval and rejection workflow controls
+- Real-time progress tracking
+- Product rejection system for quality control
+
+**Products Page (`/products`)**
+- Browse all products with descriptions
+- Real-time search with autocomplete dropdown
+- Product filtering and single-item view mode
+- Pagination and sorting controls (hidden when filtering)
+- Status indicators and metadata display
+
+**Approved Products (`/approved-products`)**
+- Personal dashboard of confirmed products
+- Admin statistics (for authorized users)
+- Performance metrics and user activity
+- Export and reporting capabilities
+
+**Login Page (`/login`)**
+- Secure authentication
+- Session management
+- Automatic redirect handling
+
+### Technical Stack
+
+- **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS
+- **Backend**: Supabase (PostgreSQL, Auth, Real-time)
+- **Security**: HTML sanitization with DOMPurify
+- **Deployment**: Docker containerization with Traefik reverse proxy
+- **Image Handling**: Next.js Image optimization with fallbacks
+
+### Key Components
+
+**Reusable UI Components**
+- `ProductHeader` - Unified product card headers with metadata display
+- `ProductSearch` - Real-time search with autocomplete dropdown
+- `ProductImage` - Optimized image display with fallback handling
+- `RejectButton` - Product rejection functionality
+- `PaginationBar` - Pagination controls with progress indicators
+- `RichTextEditorModal` - Content editing with HTML sanitization
+- `SafeHtml` - Secure HTML rendering component
+
+**Responsive Design**
+- Mobile-first approach with adaptive navigation
+- Collapsible mobile menu with smooth animations
+- Touch-friendly interface elements
+- Optimized layouts for all screen sizes
+
+### Database Schema
+
+The application works with a `products` table containing:
+
+**Core Product Data**
+- `id`, `uid`, `product_name`, `article`, `code_1c`
+- `short_description`, `description` (HTML content)
+- `image_url` (direct image links)
+
+**Workflow Management**
+- `description_added` (boolean)
+- `description_confirmed` (boolean)
+- `confirmed_by_email` (text)
+- `locked_until` (timestamp)
+- `is_rejected` (boolean) - Product rejection flag for quality control
+
+**Audit Trail**
+- `created_at`, `updated_at` (timestamps)
+- `push_to_pim` (integration status)
+- `link_pim` (external system links)
+
+### Getting Started
+
+1. **Install Dependencies**
 ```bash
-npm i
+npm install
 ```
 
-2. Создание файла `.env`
-
+2. **Environment Setup**
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=your_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_public_anon_key
+# Create .env.local
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-3. Локальный запуск
+3. **Database Setup**
+```sql
+-- Add required columns to products table
+ALTER TABLE public.products
+  ADD COLUMN IF NOT EXISTS image_url text,
+  ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now(),
+  ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now(),
+  ADD COLUMN IF NOT EXISTS description_confirmed boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS confirmed_by_email text,
+  ADD COLUMN IF NOT EXISTS locked_until timestamptz,
+  ADD COLUMN IF NOT EXISTS is_rejected boolean NOT NULL DEFAULT false;
 
+-- Create update trigger
+CREATE OR REPLACE FUNCTION public.set_updated_at()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_set_updated_at
+  BEFORE UPDATE ON public.products
+  FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+```
+
+4. **Run Development Server**
 ```bash
 npm run dev
 ```
 
-Откройте `http://localhost:3000`, войдите в систему на странице `/login`, затем перейдите на `/admin`, `/products` или `/approved-products`, чтобы увидеть ваши подтвержденные элементы
+5. **Access Application**
+- Open `http://localhost:3000`
+- Login at `/login`
+- Navigate to `/admin` for product review
+- Use `/products` to browse all items
+- Check `/approved-products` for personal dashboard
 
-### Схема базы данных (products)
+### Docker Deployment
 
-Основные столбцы, используемые приложением, включают: `row_number`, `id` (PIM id), `uid` (uuid), `product_name`, `short_description`, `description`, `description_added`, `push_to_pim`.
-
-Это приложение также ожидает следующие столбцы аудита/подтверждения. Запустите в SQL-редакторе Supabase:
-
-```sql
--- 1) Новые столбцы
-alter table public.products
-  add column if not exists created_at timestamptz not null default now(),
-  add column if not exists updated_at timestamptz not null default now(),
-  add column if not exists description_confirmed boolean not null default false,
-  add column if not exists confirmed_by_email text;
-
--- 2) Триггер updated_at
-create or replace function public.set_updated_at()
-returns trigger
-language plpgsql
-as $$
-begin
-  new.updated_at = now();
-  return new;
-end;
-$$;
-
-drop trigger if exists trg_set_updated_at on public.products;
-create trigger trg_set_updated_at
-before update on public.products
-for each row
-execute function public.set_updated_at();
+**Build and Run**
+```bash
+docker-compose up -d
 ```
 
-### Использование редактора
+**Environment Variables**
+```bash
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_key
+```
 
--   Нажмите "Редактировать краткое описание" или "Редактировать полное описание" на карточке продукта
--   Используйте панель инструментов для форматирования текста (Жирный/Курсив/Подчеркнутый, H2/P, списки, ссылка)
--   Просматривайте изменения в режиме реального времени; нажмите "Сохранить" для сохранения
--   Нажмите "Подтвердить описание", чтобы отметить его как одобренное; ваш email будет сохранен
--   Просматривайте все продукты, которые вы подтвердили, перейдя в "Мои подтверждения" в заголовке или напрямую по адресу `/approved-products`
--   Пользователи-администраторы могут просматривать таблицу статистики, показывающую количество подтверждений для каждого пользователя
+### User Roles & Permissions
 
-### Favicon и брендинг
+**Standard Users**
+- Review and edit product descriptions
+- Approve or reject content with email tracking
+- Search and filter products with real-time autocomplete
+- View personal confirmation history
+- Access product images and metadata
 
-Приложение использует `src/app/favicon.ico`. Замените его своим значком, чтобы обновить favicon. На главной странице отображается логотип компании из `src/images/logo.png`.
+**Admin Users**
+- All standard user permissions
+- Access to team statistics dashboard
+- View confirmation counts by user
+- Monitor team performance metrics
 
-### Функции администратора
+### Security Features
 
-Для пользователей, чьи email-адреса включены в массив `ADMIN_EMAILS` в файле `src/app/approved-products/page.tsx`:
+- HTML content sanitization prevents XSS attacks
+- User authentication with Supabase
+- Row-level security policies
+- Input validation and error handling
+- Secure image loading with fallbacks
+- Session management and auto-logout
 
--   Просмотр статистической панели в верхней части страницы "Подтвержденные продукты"
--   Просмотр количества продуктов, подтвержденных каждым пользователем в системе
--   Данные отсортированы по количеству подтверждений в порядке убывания
--   Чтобы добавить больше администраторов, обновите массив `ADMIN_EMAILS` в исходном коде
+### Performance Optimizations
+
+- Image optimization with Next.js Image component
+- Database query optimization with pagination and search indexing
+- Real-time search with debounced API calls
+- Client-side caching for better UX
+- Efficient state management with React hooks
+- Minimal bundle size with tree shaking
+- Responsive design with mobile-first approach
