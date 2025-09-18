@@ -404,7 +404,11 @@ export default function AdminPage() {
                                             </div>
                                         </div>
                                     )}
-                                <div className="mt-6 flex items-center gap-3">
+                                <div className="mt-6 flex items-center justify-between gap-3">
+                                    <RejectButton
+                                            row={currentRow}
+                                            onReject={rejectProduct}
+                                        />
                                     <button
                                         onClick={() =>
                                             confirmDescription(currentRow)
@@ -413,10 +417,6 @@ export default function AdminPage() {
                                     >
                                         Подтвердить описание
                                     </button>
-                                    <RejectButton
-                                        row={currentRow}
-                                        onReject={rejectProduct}
-                                    />
                                 </div>
                             </div>
                         </div>
