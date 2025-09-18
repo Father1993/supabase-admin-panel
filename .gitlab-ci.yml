@@ -24,7 +24,7 @@ deploy:
     - chmod 644 ~/.ssh/known_hosts
 
     # Выполняем команды на сервере
-    - ssh -o StrictHostKeyChecking=yes admin@$SERVER_HOST "
+    - ssh -v -o StrictHostKeyChecking=yes admin@$SERVER_HOST "
         cd /opt/supabase-admin-panel &&
         echo '🔁 Получаем последние изменения...' &&
         git fetch origin main &&
