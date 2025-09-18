@@ -7,6 +7,8 @@ import { Row } from "@/types/products";
 import { Header } from "@/components/Header";
 import { PaginationBar } from "@/components/PaginationBar";
 import { ProductImage } from "@/components/ProductImage";
+import { ProductHeader } from "@/components/ProductHeader";
+import { ProductSearch } from "@/components/ProductSearch";
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Row[]>([]);
@@ -16,11 +18,27 @@ export default function ProductsPage() {
   const [total, setTotal] = useState(0);
   const [remainingToConfirm, setRemainingToConfirm] = useState(0);
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
+  const [selectedProduct, setSelectedProduct] = useState<Row | null>(null);
+  
+  const handleSelectProduct = (product: Row | null) => {
+    setSelectedProduct(product);
+    setPage(1); // Сбрасываем страницу
+  };
   const pageSize = 50;
 
   useEffect(() => {
     fetchProducts();
-  }, [page, sortOrder]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [page, sortOrder, selectedProduct]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function searchProducts(query: string): Promise<Row[]> {
+    const { data } = await supabase
+      .from("products")
+      .select("*")
+      .eq("description_added", true)
+      .or(`product_name.ilike.%${query}%,id.eq.${isNaN(Number(query)) ? 0 : Number(query)},code_1c.ilike.%${query}%,article.ilike.%${query}%`)
+      .limit(10);
+    return data || [];
+  }
 
   async function fetchProducts() {
     const { data: { user } } = await supabase.auth.getUser();
@@ -29,12 +47,20 @@ export default function ProductsPage() {
     setError(null);
 
     try {
-      const { data, error, count } = await supabase
+      let query = supabase
         .from("products")
         .select("*", { count: "exact" })
-        .eq("description_added", true)
-        .order("updated_at", { ascending: sortOrder === "asc" })
-        .range((page - 1) * pageSize, page * pageSize - 1);
+        .eq("description_added", true);
+      
+      if (selectedProduct) {
+        query = query.eq("id", selectedProduct.id);
+      } else {
+        query = query
+          .order("updated_at", { ascending: sortOrder === "asc" })
+          .range((page - 1) * pageSize, page * pageSize - 1);
+      }
+      
+      const { data, error, count } = await query;
 
       if (error) {
         setError(error.message);
@@ -44,12 +70,14 @@ export default function ProductsPage() {
       }
 
       // Подсчитываем товары для подтверждения
-      const { count: remainingCount } = await supabase
-        .from("products")
-        .select("id", { count: "exact", head: true })
-        .eq("description_added", true)
-        .eq("description_confirmed", false);
-      setRemainingToConfirm(remainingCount ?? 0);
+      if (!selectedProduct) {
+        const { count: remainingCount } = await supabase
+          .from("products")
+          .select("id", { count: "exact", head: true })
+          .eq("description_added", true)
+          .eq("description_confirmed", false);
+        setRemainingToConfirm(remainingCount ?? 0);
+      }
 
     } catch {
       setError("Ошибка загрузки данных");
@@ -62,24 +90,39 @@ export default function ProductsPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <Header title="Список товаров" subtitle="Просмотр товаров с готовыми описаниями" />
 
-      <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+      <div className="max-w-7xl mx-auto px-4 py-6 space-y-4">
+        
         {/* Сортировка */}
+        {!selectedProduct && (
+          <div className="bg-white rounded-lg border p-2">
+            <label className="block text-sm font-medium text-gray-700">
+              Сортировка по дате обновления:
+            </label>
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as "desc" | "asc")}
+              className="px-1 py-1 border rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
+            >
+              <option value="desc">Сначала свежие</option>
+              <option value="asc">Сначала старые</option>
+            </select>
+          </div>
+        )}
+        {/* Поиск */}
         <div className="bg-white rounded-lg border p-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Сортировка по дате обновления:
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            Поиск товаров:
           </label>
-          <select
-            value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value as "desc" | "asc")}
-            className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
-          >
-            <option value="desc ">Сначала свежие</option>
-            <option value="asc">Сначала старые</option>
-          </select>
+          <ProductSearch 
+            onSelectProduct={handleSelectProduct}
+            selectedProduct={selectedProduct}
+            searchProducts={searchProducts}
+          />
         </div>
 
+
         {/* Пагинация сверху */}
-        {!loading && <PaginationBar page={page} total={total} pageSize={pageSize} onPageChange={setPage} remainingToConfirm={remainingToConfirm} />}
+        {!loading && !selectedProduct && <PaginationBar page={page} total={total} pageSize={pageSize} onPageChange={setPage} remainingToConfirm={remainingToConfirm} />}
 
         {loading && (
           <div className="flex items-center justify-center py-12">
@@ -100,66 +143,16 @@ export default function ProductsPage() {
             {products.map((product) => (
               <div key={product.id} className="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
                 {/* Заголовок */}
-                <div className="bg-gradient-to-r from-slate-50 to-blue-50 px-6 py-4 border-b">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      {product.product_name && (
-                        <h3 className="text-xl font-bold text-slate-900 mb-2">{product.product_name}</h3>
-                      )}
-                      <div className="flex flex-wrap gap-4 text-sm">
-                        <span className="bg-slate-100 px-3 py-1 rounded-full">
-                          <span className="text-slate-500 font-medium">ID:</span>
-                          <span className="text-slate-800 ml-1">{String(product.id)}</span>
-                        </span>
-                        {product.uid && (
-                          <span className="bg-blue-100 px-3 py-1 rounded-full">
-                            <span className="text-blue-600 font-medium">UID:</span>
-                            <span className="text-blue-800 ml-1">{product.uid}</span>
-                          </span>
-                        )}
-                        {product.article && (
-                          <span className="bg-violet-100 px-3 py-1 rounded-full">
-                            <span className="text-violet-600 font-medium">Артикул:</span>
-                            <span className="text-violet-800 ml-1">{product.article}</span>
-                          </span>
-                        )}
-                        {product.code_1c && (
-                          <span className="bg-teal-100 px-3 py-1 rounded-full">
-                            <span className="text-teal-600 font-medium">Код 1С:</span>
-                            <span className="text-teal-800 ml-1">{product.code_1c}</span>
-                          </span>
-                        )}
-                        {typeof product.push_to_pim === "boolean" && (
-                          <span className={`px-3 py-1 rounded-full font-medium ${
-                            product.push_to_pim 
-                              ? "bg-green-100 text-green-800" 
-                              : "bg-gray-100 text-gray-600"
-                          }`}>
-                            PIM: {product.push_to_pim ? "✓ Загружен" : "Не загружен"}
-                          </span>
-                        )}
-                        {product.link_pim && (
-                          <a
-                            href={product.link_pim}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-medium hover:bg-blue-200"
-                          >
-                            Открыть в PIM ↗
-                          </a>
-                        )}
-                        {product.description_confirmed && (
-                          <span className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-medium">
-                            ✓ Подтверждено
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-sm text-slate-500">
-                      {product.updated_at && new Date(product.updated_at).toLocaleDateString("ru")}
-                    </div>
-                  </div>
-                </div>
+                <ProductHeader 
+                  product={product}
+                  additionalBadges={[
+                    ...(product.description_confirmed ? [
+                      <span key="confirmed" className="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-medium">
+                        ✓ Подтверждено
+                      </span>
+                    ] : [])
+                  ]}
+                />
 
                 {/* Изображение и описания */}
                 <div className="p-6">
@@ -206,7 +199,7 @@ export default function ProductsPage() {
         )}
 
         {/* Пагинация снизу */}
-        {!loading && <PaginationBar page={page} total={total} pageSize={pageSize} onPageChange={setPage} remainingToConfirm={remainingToConfirm} />}
+        {!loading && !selectedProduct && <PaginationBar page={page} total={total} pageSize={pageSize} onPageChange={setPage} remainingToConfirm={remainingToConfirm} />}
       </div>
     </div>
   );

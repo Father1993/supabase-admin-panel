@@ -8,6 +8,8 @@ import { Row } from '@/types/products'
 import { Header } from '@/components/Header'
 import { ProductImage } from '@/components/ProductImage'
 import { RichTextEditorModal } from '@/components/RichTextEditorModal'
+import { RejectButton } from '@/components/RejectButton'
+import { ProductHeader } from '@/components/ProductHeader'
 
 export default function AdminPage() {
     const [currentRow, setCurrentRow] = useState<Row | null>(null)
@@ -57,6 +59,7 @@ export default function AdminPage() {
                     )
                     .eq('description_added', true)
                     .eq('description_confirmed', false)
+                    .eq('is_rejected', false)
                     .or(
                         'locked_until.is.null,locked_until.lt.' +
                             new Date().toISOString()
@@ -92,6 +95,7 @@ export default function AdminPage() {
                     .select('id', { count: 'exact', head: true })
                     .eq('description_added', true)
                     .eq('description_confirmed', false)
+                    .eq('is_rejected', false)
                 setRemainingToConfirm(remainingCount ?? 0)
             } catch {
                 setError('Ошибка загрузки данных')
@@ -169,6 +173,28 @@ export default function AdminPage() {
         window.location.reload() // Простая перезагрузка для получения новой карточки
     }
 
+    async function rejectProduct(row: Row) {
+        if (!currentUserEmail) {
+            alert('Нет email пользователя. Авторизуйтесь заново.')
+            return
+        }
+        const { error } = await supabase
+            .from('products')
+            .update({
+                is_rejected: true,
+                locked_until: null, // Освобождаем блокировку
+            })
+            .eq('id', row.id)
+        if (error) {
+            alert(`Ошибка отклонения: ${error.message}`)
+            return
+        }
+
+        // Успешно отклонили - загружаем следующую карточку
+        setRemainingToConfirm((x) => Math.max(0, x - 1))
+        window.location.reload()
+    }
+
     // Кнопка ручной загрузки следующей карточки удалена как избыточная
 
     return (
@@ -213,85 +239,15 @@ export default function AdminPage() {
                     <div className="space-y-8">
                         <div className="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden hover:shadow-xl transition-all duration-300">
                             {/* Заголовок карточки */}
-                            <div className="bg-gradient-to-r from-slate-50 to-blue-50 px-8 py-6 border-b border-slate-200">
-                                <div className="flex items-start justify-between">
-                                    <div className="flex-1">
-                                        {currentRow.product_name && (
-                                            <h2 className="text-2xl font-bold text-slate-900 mb-2 leading-tight">
-                                                {currentRow.product_name}
-                                            </h2>
-                                        )}
-                                        <div className="flex flex-wrap gap-4 text-sm">
-                                            <span className="bg-slate-100 px-3 py-1 rounded-full">
-                                                <span className="text-slate-500 font-medium">
-                                                    ID:
-                                                </span>
-                                                <span className="text-slate-800 ml-1">
-                                                    {String(currentRow.id)}
-                                                </span>
-                                            </span>
-                                            {currentRow.uid && (
-                                                <span className="bg-blue-100 px-3 py-1 rounded-full">
-                                                    <span className="text-blue-600 font-medium">
-                                                        UID:
-                                                    </span>
-                                                    <span className="text-blue-800 ml-1">
-                                                        {currentRow.uid}
-                                                    </span>
-                                                </span>
-                                            )}
-                                            {currentRow.article && (
-                                                <span className="bg-violet-100 px-3 py-1 rounded-full">
-                                                    <span className="text-violet-600 font-medium">
-                                                        Артикул:
-                                                    </span>
-                                                    <span className="text-violet-800 ml-1">
-                                                        {currentRow.article}
-                                                    </span>
-                                                </span>
-                                            )}
-                                            {currentRow.code_1c && (
-                                                <span className="bg-teal-100 px-3 py-1 rounded-full">
-                                                    <span className="text-teal-600 font-medium">
-                                                        Код 1С:
-                                                    </span>
-                                                    <span className="text-teal-800 ml-1">
-                                                        {currentRow.code_1c}
-                                                    </span>
-                                                </span>
-                                            )}
-                                            {typeof currentRow.push_to_pim ===
-                                                'boolean' && (
-                                                <span
-                                                    className={`px-3 py-1 rounded-full font-medium ${
-                                                        currentRow.push_to_pim
-                                                            ? 'bg-green-100 text-green-800'
-                                                            : 'bg-gray-100 text-gray-600'
-                                                    }`}
-                                                >
-                                                    PIM:{' '}
-                                                    {currentRow.push_to_pim
-                                                        ? '✓ Загружен'
-                                                        : 'Не загружен'}
-                                                </span>
-                                            )}
-                                              {currentRow.link_pim && (
-                                                <a
-                                                    href={currentRow.link_pim}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-medium hover:bg-blue-200"
-                                                >
-                                                    Открыть в PIM ↗
-                                                </a>
-                                                )}
-                                            <span className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full font-medium text-xs">
-                                                🔒 Заблокировано для вас
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            <ProductHeader 
+                                product={currentRow}
+                                size="large"
+                                additionalBadges={[
+                                    <span key="locked" className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full font-medium text-xs">
+                                        🔒 Заблокировано для вас
+                                    </span>
+                                ]}
+                            />
 
                             {/* Контент карточки */}
                             <div className="p-8">
@@ -457,6 +413,10 @@ export default function AdminPage() {
                                     >
                                         Подтвердить описание
                                     </button>
+                                    <RejectButton
+                                        row={currentRow}
+                                        onReject={rejectProduct}
+                                    />
                                 </div>
                             </div>
                         </div>
