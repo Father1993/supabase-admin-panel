@@ -129,7 +129,6 @@ async function restoreImage(product: Row) {
                                     {product.image_url ? (
                                         // TODO Поменять на Image
                                         <img
-                                        fill
                                             src={product.image_url}
                                             alt={product.product_name || 'Изображение товара'}
                                             className="w-full h-full object-contain"
