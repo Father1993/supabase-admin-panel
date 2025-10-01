@@ -176,6 +176,7 @@ export default function AdminImagesPage() {
                                 
                                 <div className="relative border-3 border-orange-300 p-0 bg-gray-100 rounded-0 ">
                                     {currentProduct.image_url && (
+                                        // TODO Поменять на Image
                                         <img
                                             src={currentProduct.image_url}
                                             alt={currentProduct.product_name || 'Изображение товара'}
