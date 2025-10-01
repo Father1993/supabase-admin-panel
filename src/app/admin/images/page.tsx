@@ -123,7 +123,7 @@ export default function AdminImagesPage() {
                 subtitle="Подтверждение качества изображений товаров"
             />
 
-            <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+            <div className=" px-6 py-8 ">
                 {/* Информация о работе */}
                 <div className="bg-white border rounded-lg px-4 py-3">
                     <div className="text-sm text-gray-600">
@@ -171,21 +171,26 @@ export default function AdminImagesPage() {
 
                         {/* Изображение и кнопки */}
                         <div className="p-8">
-                            <div className="flex flex-col items-center space-y-6">
+                            <div className="flex flex-col items-center  overflow-auto  w-full h-full">
                                 {/* Изображение */}
                                 
-                                <div className="relative border-3 border-orange-300 p-0 bg-gray-100 rounded-0 ">
+                                <div className="relative  border-1 border-orange-300 p-0 bg-gray-100 rounded-0 "
+                                >
                                     {currentProduct.image_url && (
                                         // TODO Поменять на Image
-                                        <img
-                                            src={currentProduct.image_url}
-                                            alt={currentProduct.product_name || 'Изображение товара'}
-                                            className="max-w-full h-auto max-h-100"
-                                            onLoad={(e) => {
-                                                const img = e.currentTarget
-                                                setImageSize({ w: img.naturalWidth, h: img.naturalHeight })
-                                            }}
-                                        />
+                                        <img 
+                                        className=' '
+                                             src={currentProduct.image_url}
+                                             alt={currentProduct.product_name || 'Изображение товара'}
+                                             style={{ 
+                                               minWidth: imageSize?.w, 
+                                               minHeight: imageSize?.h 
+                                             }}
+                                             onLoad={(e) => {
+                                               const img = e.currentTarget
+                                               setImageSize({ w: img.naturalWidth, h: img.naturalHeight })
+                                             }}
+                                            />
                                     )}
                                 </div>
 
