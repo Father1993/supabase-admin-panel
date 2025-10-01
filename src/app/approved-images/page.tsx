@@ -1,11 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback  } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { Row } from '@/types/products'
 import { Header } from '@/components/Header'
 import { PaginationBar } from '@/components/PaginationBar'
-
 // Список email-адресов пользователей, имеющих доступ к статистике
 const ADMIN_EMAILS = [
     'bakum_y@mail.ru',
@@ -28,11 +27,7 @@ export default function ApprovedImagesPage() {
     const [isSpecialUser, setIsSpecialUser] = useState(false)
     const pageSize = 50
 
-    useEffect(() => {
-        fetchProducts()
-    }, [page, sortOrder])
-
-    async function fetchProducts() {
+   const fetchProducts = useCallback(async () => {
         const {
             data: { user },
         } = await supabase.auth.getUser()
@@ -45,7 +40,6 @@ export default function ApprovedImagesPage() {
         setLoading(true)
         setError(null)
 
-        // Проверка, имеет ли пользователь доступ к статистике
         const isSpecial = userEmail !== null && ADMIN_EMAILS.includes(userEmail)
         setIsSpecialUser(isSpecial)
 
@@ -68,7 +62,6 @@ export default function ApprovedImagesPage() {
             setError('Ошибка загрузки данных')
         }
 
-        // Загрузка статистики для специального пользователя
         if (isSpecial) {
             try {
                 const { data: allConfirmedData, error: statsError } =
@@ -80,20 +73,15 @@ export default function ApprovedImagesPage() {
 
                 if (!statsError && allConfirmedData) {
                     const stats: Record<string, number> = {}
-
                     allConfirmedData.forEach((item) => {
                         const email = item.image_confirmed_by_email as string
                         stats[email] = (stats[email] || 0) + 1
                     })
 
-                    const statsArray = Object.entries(stats).map(
-                        ([email, count]) => ({
-                            email,
-                            count,
-                        })
-                    )
+                    const statsArray = Object.entries(stats)
+                        .map(([email, count]) => ({ email, count }))
+                        .sort((a, b) => b.count - a.count)
 
-                    statsArray.sort((a, b) => b.count - a.count)
                     setUserStats(statsArray)
                 }
             } catch (err) {
@@ -102,7 +90,11 @@ export default function ApprovedImagesPage() {
         }
 
         setLoading(false)
-    }
+    }, [page, sortOrder]) // только реальные зависимости
+
+    useEffect(() => {
+        fetchProducts()
+    }, [fetchProducts])
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -212,6 +204,7 @@ export default function ApprovedImagesPage() {
                                 {/* Изображение */}
                                 <div className="aspect-square relative bg-gray-100">
                                     {product.image_url ? (
+                                        // TODO Поменять на Image
                                         <img
                                             src={product.image_url}
                                             alt={product.product_name || 'Изображение товара'}

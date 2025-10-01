@@ -1,11 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback  } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { Row } from '@/types/products'
 import { Header } from '@/components/Header'
 import { PaginationBar } from '@/components/PaginationBar'
-
 export default function RejectedImagesPage() {
     const [products, setProducts] = useState<Row[]>([])
     const [loading, setLoading] = useState(true)
@@ -15,56 +14,53 @@ export default function RejectedImagesPage() {
     const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc')
     const pageSize = 50
 
-    useEffect(() => {
-        fetchProducts()
-    }, [page, sortOrder])
-
-    async function fetchProducts() {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) {
-            window.location.href = '/login'
-            return
-        }
-        setLoading(true)
-        setError(null)
-
-        try {
-            const { data, error, count } = await supabase
-                .from('products')
-                .select('*', { count: 'exact' })
-                .eq('image_rejected', true)
-                .order('updated_at', { ascending: sortOrder === 'asc' })
-                .range((page - 1) * pageSize, page * pageSize - 1)
-
-            if (error) {
-                setError(error.message)
-            } else {
-                setProducts(data || [])
-                setTotal(count || 0)
-            }
-        } catch {
-            setError('Ошибка загрузки данных')
-        }
-
-        setLoading(false)
+const fetchProducts = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+        window.location.href = '/login'
+        return
     }
+    setLoading(true)
+    setError(null)
 
-    async function restoreImage(product: Row) {
-        const { error } = await supabase
+    try {
+        const { data, error, count } = await supabase
             .from('products')
-            .update({
-                image_rejected: false,
-            })
-            .eq('id', product.id)
-            
-        if (error) {
-            alert(`Ошибка восстановления: ${error.message}`)
-            return
-        }
+            .select('*', { count: 'exact' })
+            .eq('image_rejected', true)
+            .order('updated_at', { ascending: sortOrder === 'asc' })
+            .range((page - 1) * pageSize, page * pageSize - 1)
 
-        // Обновляем список
-        await fetchProducts()
+        if (error) {
+            setError(error.message)
+        } else {
+            setProducts(data || [])
+            setTotal(count || 0)
+        }
+    } catch {
+        setError('Ошибка загрузки данных')
     }
+
+    setLoading(false)
+}, [page, sortOrder])
+
+useEffect(() => {
+    fetchProducts()
+}, [fetchProducts])
+
+async function restoreImage(product: Row) {
+    const { error } = await supabase
+        .from('products')
+        .update({ image_rejected: false })
+        .eq('id', product.id)
+
+    if (error) {
+        alert(`Ошибка восстановления: ${error.message}`)
+        return
+    }
+
+    await fetchProducts() 
+}
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -131,7 +127,9 @@ export default function RejectedImagesPage() {
                                 {/* Изображение */}
                                 <div className="aspect-square relative bg-gray-100">
                                     {product.image_url ? (
+                                        // TODO Поменять на Image
                                         <img
+                                        fill
                                             src={product.image_url}
                                             alt={product.product_name || 'Изображение товара'}
                                             className="w-full h-full object-contain"

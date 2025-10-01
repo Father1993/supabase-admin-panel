@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback  } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { Row } from '@/types/products'
 import { Header } from '@/components/Header'
 import { PaginationBar } from '@/components/PaginationBar'
+import {ChangeEvent} from "react"
 
 export default function ImagesPage() {
     const [products, setProducts] = useState<Row[]>([])
@@ -17,11 +18,8 @@ export default function ImagesPage() {
     const [filterStatus, setFilterStatus] = useState<'all' | 'confirmed' | 'rejected' | 'pending'>('all')
     const pageSize = 50
 
-    useEffect(() => {
-        fetchProducts()
-    }, [page, sortOrder, filterStatus])
-
-    async function fetchProducts() {
+  
+    const fetchProducts = useCallback(async () => {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) {
             window.location.href = '/login'
@@ -72,7 +70,11 @@ export default function ImagesPage() {
         }
 
         setLoading(false)
-    }
+    }, [page, sortOrder, filterStatus]) 
+
+    useEffect(() => {
+        fetchProducts()
+    }, [fetchProducts]) 
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -91,8 +93,8 @@ export default function ImagesPage() {
                             </label>
                             <select
                                 value={filterStatus}
-                                onChange={(e) => {
-                                    setFilterStatus(e.target.value as any)
+                                onChange={(e: ChangeEvent<HTMLSelectElement>) => {
+                                    setFilterStatus(e.target.value as typeof filterStatus)
                                     setPage(1)
                                 }}
                                 className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
@@ -139,7 +141,7 @@ export default function ImagesPage() {
                         <p className="text-red-800">Ошибка: {error}</p>
                     </div>
                 )}
-
+ 
                 {/* Список изображений */}
                 {!loading && !error && products.length > 0 && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -151,7 +153,8 @@ export default function ImagesPage() {
                                 {/* Изображение */}
                                 <div className="aspect-square relative bg-gray-100">
                                     {product.image_url ? (
-                                        <img
+                                        // TODO Поменять на Image
+                                        <img 
                                             src={product.image_url}
                                             alt={product.product_name || 'Изображение товара'}
                                             className="w-full h-full object-contain"
