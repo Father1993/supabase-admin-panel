@@ -16,4 +16,7 @@ export type Row = {
     link_pim?: string
     image_url?: string | null
     is_rejected?: boolean | null
+    image_confirmed?: boolean | null
+    image_confirmed_by_email?: string | null
+    image_rejected?: boolean | null
 }

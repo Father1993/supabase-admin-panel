@@ -94,7 +94,39 @@ export default function Home() {
                                 </Link>
                             </div>
                         </div>
+
+                        
+                        {/* Категории */}
+                        <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-6 flex-1 flex flex-col">
+                            <h2 className="text-lg font-semibold text-slate-900 mb-4">
+                                📷 Изображения
+                            </h2>
+                            <div className="space-y-3 flex-1 flex flex-col justify-start">
+                                <Link
+                                    href="/admin/images"
+                                    className="flex items-center gap-2 px-5 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition w-full justify-center"
+                                >
+                                    <span>🔍</span>
+                                    Проверка изображений
+                                </Link>
+                                <Link
+                                    href="/images"
+                                    className="flex items-center gap-2 px-5 py-3 rounded-lg border border-slate-300 text-slate-700 bg-white hover:bg-slate-50 transition w-full justify-center"
+                                >
+                                    <span>📋</span>
+                                    Список изображений
+                                </Link>
+                                <Link
+                                    href="/approved-images"
+                                    className="flex items-center gap-2 px-5 py-3 rounded-lg border border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition w-full justify-center"
+                                >
+                                    <span>✅</span>
+                                    Подтверждённые изображения
+                                </Link>
+                            </div>
+                        </div>
                     </div>
+                    
 
                     {/* Правая колонка: инструкция */}
                     <div className="bg-white/80 backdrop-blur rounded-xl border border-slate-200 shadow-lg p-6 flex flex-col">
