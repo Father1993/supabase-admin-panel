@@ -32,7 +32,7 @@ export default function ImagesPage() {
             let query = supabase
                 .from('products')
                 .select('*', { count: 'exact' })
-                .not('image_url', 'is', null)
+                .not('image_optimized_url', 'is', null)
 
             // Применяем фильтр по статусу
             if (filterStatus === 'confirmed') {
@@ -62,7 +62,7 @@ export default function ImagesPage() {
                 .select('id', { count: 'exact', head: true })
                 .eq('image_confirmed', false)
                 .eq('image_rejected', false)
-                .not('image_url', 'is', null)
+                .not('image_optimized_url', 'is', null)
             setRemainingToConfirm(remainingCount ?? 0)
 
         } catch {
@@ -148,10 +148,10 @@ export default function ImagesPage() {
                             >
                                 {/* Изображение */}
                                 <div className="aspect-square relative bg-gray-100">
-                                    {product.image_url ? (
+                                    {product.image_optimized_url ? (
                                         // TODO Поменять на Image
                                         <img 
-                                            src={product.image_url}
+                                            src={product.image_optimized_url}
                                             alt={product.product_name || 'Изображение товара'}
                                             className="w-full h-full object-contain"
                                         />

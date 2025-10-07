@@ -126,10 +126,10 @@ async function restoreImage(product: Row) {
                             >
                                 {/* Изображение */}
                                 <div className="aspect-square relative bg-gray-100">
-                                    {product.image_url ? (
+                                    {product.image_optimized_url ? (
                                         // TODO Поменять на Image
                                         <img
-                                            src={product.image_url}
+                                            src={product.image_optimized_url}
                                             alt={product.product_name || 'Изображение товара'}
                                             className="w-full h-full object-contain"
                                         />
