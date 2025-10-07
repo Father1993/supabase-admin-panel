@@ -55,7 +55,7 @@ export default function AdminPage() {
                 const { data, error } = await supabase
                     .from('products')
                     .select(
-                        'id, uid, product_name, article, code_1c, short_description, description, description_added, push_to_pim, description_confirmed, confirmed_by_email, created_at, updated_at, locked_until, link_pim, image_url'
+                        'id, uid, product_name, article, code_1c, short_description, description, description_added, push_to_pim, description_confirmed, confirmed_by_email, created_at, updated_at, locked_until, link_pim, image_optimized_url'
                     )
                     .eq('description_added', true)
                     .eq('description_confirmed', false)
@@ -256,7 +256,7 @@ export default function AdminPage() {
                                     <div className="space-y-6">
                         {/* Изображение товара */}
                         <ProductImage 
-                            imageUrl={currentRow.image_url} 
+                            imageUrl={currentRow.image_optimized_url} 
                             productName={currentRow.product_name}
                         />
                                         

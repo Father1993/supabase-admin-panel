@@ -99,7 +99,7 @@ The application works with a `products` table containing:
 **Core Product Data**
 - `id`, `uid`, `product_name`, `article`, `code_1c`
 - `short_description`, `description` (HTML content)
-- `image_url` (direct image links)
+- `image_optimized_url` (direct image links)
 
 **Workflow Management**
 - `description_added` (boolean)
@@ -131,7 +131,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```sql
 -- Add required columns to products table
 ALTER TABLE public.products
-  ADD COLUMN IF NOT EXISTS image_url text,
+  ADD COLUMN IF NOT EXISTS image_optimized_url text,
   ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now(),
   ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now(),
   ADD COLUMN IF NOT EXISTS description_confirmed boolean NOT NULL DEFAULT false,
