@@ -239,7 +239,7 @@ export default function ApprovedProductsPage() {
                                         <div className="space-y-6">
                                             {/* Изображение товара */}
                                             <ProductImage 
-                                                imageUrl={product.image_url} 
+                                                imageUrl={product.image_optimized_url} 
                                                 productName={product.product_name}
                                             />
                                             

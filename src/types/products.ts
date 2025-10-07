@@ -15,6 +15,7 @@ export type Row = {
     locked_until?: string | null
     link_pim?: string
     image_url?: string | null
+    image_optimized_url?: string | null
     is_rejected?: boolean | null
     image_confirmed?: boolean | null
     image_confirmed_by_email?: string | null
