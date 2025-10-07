@@ -36,7 +36,7 @@ export default function AdminImagesPage() {
                 .select('*')
                 .eq('image_confirmed', false)
                 .eq('image_rejected', false)
-                .not('image_url', 'is', null)
+                .not('image_optimized_url', 'is', null)
                 .limit(50)
 
             if (error) {
@@ -51,7 +51,7 @@ export default function AdminImagesPage() {
                 .select('id', { count: 'exact', head: true })
                 .eq('image_confirmed', false)
                 .eq('image_rejected', false)
-                .not('image_url', 'is', null)
+                .not('image_optimized_url', 'is', null)
             setRemainingToConfirm(remainingCount ?? 0)
         } catch {
             setError('Ошибка загрузки данных')
@@ -176,11 +176,11 @@ export default function AdminImagesPage() {
                                 
                                 <div className="relative  border-1 border-orange-300 p-0 bg-gray-100 rounded-0 "
                                 >
-                                    {currentProduct.image_url && (
+                                    {currentProduct.image_optimized_url && (
                                         // TODO Поменять на Image
                                         <img 
                                         className=' '
-                                             src={currentProduct.image_url}
+                                             src={currentProduct.image_optimized_url}
                                              alt={currentProduct.product_name || 'Изображение товара'}
                                              style={{ 
                                                minWidth: imageSize?.w, 
