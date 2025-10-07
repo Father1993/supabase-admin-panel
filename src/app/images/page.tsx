@@ -16,7 +16,7 @@ export default function ImagesPage() {
     const [remainingToConfirm, setRemainingToConfirm] = useState(0)
     const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc')
     const [filterStatus, setFilterStatus] = useState<'all' | 'confirmed' | 'rejected' | 'pending'>('all')
-    const pageSize = 50
+    const pageSize = 52
 
   
     const fetchProducts = useCallback(async () => {
@@ -119,15 +119,11 @@ export default function ImagesPage() {
                             </select>
                         </div>
                     </div>
-                    {remainingToConfirm > 0 && (
-                        <div className="text-sm text-gray-600 pt-2 border-t">
-                            Осталось проверить изображений: <span className="font-medium text-gray-900">{remainingToConfirm}</span>
-                        </div>
-                    )}
+               
                 </div>
 
                 {/* Пагинация сверху */}
-                {!loading && <PaginationBar page={page} total={total} pageSize={pageSize} onPageChange={setPage} />}
+                {!loading && <PaginationBar page={page} total={total} pageSize={pageSize} onPageChange={setPage} remainingToConfirm={remainingToConfirm}/>}
 
                 {loading && (
                     <div className="flex items-center justify-center py-12">
@@ -236,7 +232,7 @@ export default function ImagesPage() {
 
                 {/* Пагинация снизу */}
                 {!loading && products.length > 0 && (
-                    <PaginationBar page={page} total={total} pageSize={pageSize} onPageChange={setPage} />
+                    <PaginationBar page={page} total={total} pageSize={pageSize} onPageChange={setPage} remainingToConfirm={remainingToConfirm}/>
                 )}
             </div>
         </div>

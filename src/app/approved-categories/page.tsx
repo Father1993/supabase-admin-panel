@@ -7,14 +7,7 @@ import { Category } from '@/types/categories'
 import { Header } from '@/components/Header'
 import { PaginationBar } from '@/components/PaginationBar'
 import { CategoryHeader } from '@/components/CategoryHeader'
-
-// Список email-адресов пользователей, имеющих доступ к статистике
-const ADMIN_EMAILS = [
-    'bakum_y@mail.ru',
-    'info.uroven.pro@gmail.com',
-    'ekom@uroven.org',
-    'shumeiko_fd@uroven.org',
-]
+import { ADMIN_EMAILS } from '@/config/admin'
 
 export default function ApprovedCategoriesPage() {
     const [categories, setCategories] = useState<Category[]>([])
