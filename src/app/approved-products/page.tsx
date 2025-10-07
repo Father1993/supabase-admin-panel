@@ -8,15 +8,7 @@ import { Header } from '@/components/Header'
 import { PaginationBar } from '@/components/PaginationBar'
 import { ProductImage } from '@/components/ProductImage'
 import { ProductHeader } from '@/components/ProductHeader'
-
-// Список email-адресов пользователей, имеющих доступ к статистике
-// Для добавления нового пользователя просто добавьте его email в этот массив
-const ADMIN_EMAILS = [
-    'bakum_y@mail.ru',
-    'info.uroven.pro@gmail.com',
-    'ekom@uroven.org',
-    'shumeiko_fd@uroven.org',
-]
+import { ADMIN_EMAILS } from '@/config/admin'
 
 export default function ApprovedProductsPage() {
     const [products, setProducts] = useState<Row[]>([])
