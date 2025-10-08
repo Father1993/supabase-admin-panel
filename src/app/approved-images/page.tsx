@@ -41,7 +41,7 @@ export default function ApprovedImagesPage() {
             const { data, error, count } = await supabase
                 .from('products')
                 .select('*', { count: 'exact' })
-                .eq('image_confirmed', true)
+                .eq('image_status', 'approved')
                 .eq('image_confirmed_by_email', user.email)
                 .order('updated_at', { ascending: sortOrder === 'asc' })
                 .range((page - 1) * pageSize, page * pageSize - 1)
@@ -62,7 +62,7 @@ export default function ApprovedImagesPage() {
                     await supabase
                         .from('products')
                         .select('image_confirmed_by_email')
-                        .eq('image_confirmed', true)
+                        .eq('image_status', 'approved')
                         .not('image_confirmed_by_email', 'is', null)
 
                 if (!statsError && allConfirmedData) {
