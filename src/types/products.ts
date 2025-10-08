@@ -20,4 +20,5 @@ export type Row = {
     image_confirmed?: boolean | null
     image_confirmed_by_email?: string | null
     image_rejected?: boolean | null
+    image_status?: 'approved' | 'rejected' | 'replace_later' | null
 }

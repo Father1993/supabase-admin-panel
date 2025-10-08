@@ -15,7 +15,7 @@ export default function ImagesPage() {
     const [total, setTotal] = useState(0)
     const [remainingToConfirm, setRemainingToConfirm] = useState(0)
     const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc')
-    const [filterStatus, setFilterStatus] = useState<'all' | 'confirmed' | 'rejected' | 'pending'>('all')
+    const [filterStatus, setFilterStatus] = useState<'all' | 'approved' | 'rejected' | 'replace_later' | 'pending'>('all')
     const pageSize = 52
 
   
@@ -35,12 +35,14 @@ export default function ImagesPage() {
                 .not('image_optimized_url', 'is', null)
 
             // Применяем фильтр по статусу
-            if (filterStatus === 'confirmed') {
-                query = query.eq('image_confirmed', true)
+            if (filterStatus === 'approved') {
+                query = query.eq('image_status', 'approved')
             } else if (filterStatus === 'rejected') {
-                query = query.eq('image_rejected', true)
+                query = query.eq('image_status', 'rejected')
+            } else if (filterStatus === 'replace_later') {
+                query = query.eq('image_status', 'replace_later')
             } else if (filterStatus === 'pending') {
-                query = query.eq('image_confirmed', false).eq('image_rejected', false)
+                query = query.is('image_status', null)
             }
 
             query = query
@@ -60,8 +62,7 @@ export default function ImagesPage() {
             const { count: remainingCount } = await supabase
                 .from('products')
                 .select('id', { count: 'exact', head: true })
-                .eq('image_confirmed', false)
-                .eq('image_rejected', false)
+                .is('image_status', null)
                 .not('image_optimized_url', 'is', null)
             setRemainingToConfirm(remainingCount ?? 0)
 
@@ -101,8 +102,9 @@ export default function ImagesPage() {
                             >
                                 <option value="all">Все изображения</option>
                                 <option value="pending">Не проверенные</option>
-                                <option value="confirmed">Подтвержденные</option>
-                                <option value="rejected">Отклоненные</option>
+                                <option value="approved">Подтверждено</option>
+                                <option value="replace_later">Требуется замена</option>
+                                <option value="rejected">Отклонено</option>
                             </select>
                         </div>
                         <div>
@@ -167,20 +169,17 @@ export default function ImagesPage() {
                                     
                                     {/* Статус в углу */}
                                     <div className="absolute top-2 right-2">
-                                        {product.image_confirmed && (
-                                            <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">
-                                                ✓
-                                            </span>
+                                        {product.image_status === 'approved' && (
+                                            <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full">✓</span>
                                         )}
-                                        {product.image_rejected && (
-                                            <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
-                                                ✗
-                                            </span>
+                                        {product.image_status === 'rejected' && (
+                                            <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">✗</span>
                                         )}
-                                        {!product.image_confirmed && !product.image_rejected && (
-                                            <span className="bg-yellow-500 text-white text-xs px-2 py-1 rounded-full">
-                                                ?
-                                            </span>
+                                        {product.image_status === 'replace_later' && (
+                                            <span className="bg-yellow-500 text-white text-xs px-2 py-1 rounded-full">⏱</span>
+                                        )}
+                                        {!product.image_status && (
+                                            <span className="bg-gray-500 text-white text-xs px-2 py-1 rounded-full">?</span>
                                         )}
                                     </div>
                                 </div>
@@ -201,7 +200,7 @@ export default function ImagesPage() {
                                     
                                     {/* Статус */}
                                     <div className="mt-2">
-                                        {product.image_confirmed && (
+                                        {product.image_status === 'approved' && (
                                             <div className="text-xs text-green-700">
                                                 <span className="font-medium">Подтверждено</span>
                                                 {product.image_confirmed_by_email && (
@@ -209,11 +208,14 @@ export default function ImagesPage() {
                                                 )}
                                             </div>
                                         )}
-                                        {product.image_rejected && (
+                                        {product.image_status === 'rejected' && (
                                             <span className="text-xs font-medium text-red-700">Отклонено</span>
                                         )}
-                                        {!product.image_confirmed && !product.image_rejected && (
-                                            <span className="text-xs font-medium text-yellow-700">Ожидает проверки</span>
+                                        {product.image_status === 'replace_later' && (
+                                            <span className="text-xs font-medium text-yellow-700">Требуется замена</span>
+                                        )}
+                                        {!product.image_status && (
+                                            <span className="text-xs font-medium text-gray-700">Ожидает проверки</span>
                                         )}
                                     </div>
                                 </div>

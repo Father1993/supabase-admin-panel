@@ -35,10 +35,13 @@ A comprehensive Next.js admin panel for managing product descriptions with image
 - Admin statistics for team performance tracking
 
 **Image Management**
+- Three-status image approval system: Approved, Rejected, Requires Replacement
 - Automatic product image loading from database URLs
+- Image quality control workflow with user tracking
 - Fallback handling for missing images
 - Responsive image display with proper aspect ratios
 - Error handling for broken image links
+- Image filtering by approval status
 
 ### Pages & Navigation
 
@@ -49,6 +52,13 @@ A comprehensive Next.js admin panel for managing product descriptions with image
 - Real-time progress tracking
 - Product rejection system for quality control
 
+**Admin Images (`/admin/images`)**
+- Image quality control workflow
+- Three-button approval system: Approved, Rejected, Requires Replacement
+- Image dimension display and validation
+- Progress tracking for pending images
+- User email tracking for approved images
+
 **Products Page (`/products`)**
 - Browse all products with descriptions
 - Real-time search with autocomplete dropdown
@@ -56,11 +66,30 @@ A comprehensive Next.js admin panel for managing product descriptions with image
 - Pagination and sorting controls (hidden when filtering)
 - Status indicators and metadata display
 
+**Images Page (`/images`)**
+- Browse all product images with status indicators
+- Filter by status: All, Pending, Approved, Requires Replacement, Rejected
+- Visual status badges for quick identification
+- Pagination and sorting controls
+- Image quality verification tools
+
 **Approved Products (`/approved-products`)**
 - Personal dashboard of confirmed products
 - Admin statistics (for authorized users)
 - Performance metrics and user activity
 - Export and reporting capabilities
+
+**Approved Images (`/approved-images`)**
+- Personal dashboard of images confirmed by user
+- Admin statistics showing team performance
+- Confirmation counts by user email
+- Sorting and pagination controls
+
+**Rejected Images (`/rejected-images`)**
+- List of all rejected images
+- Image restoration functionality
+- Sorting and filtering options
+- Quality control review system
 
 **Login Page (`/login`)**
 - Secure authentication
@@ -108,6 +137,14 @@ The application works with a `products` table containing:
 - `locked_until` (timestamp)
 - `is_rejected` (boolean) - Product rejection flag for quality control
 
+**Image Workflow**
+- `image_status` (enum: approved, rejected, replace_later)
+- `image_confirmed` (boolean) - Legacy field for backward compatibility
+- `image_rejected` (boolean) - Legacy field for backward compatibility
+- `image_confirmed_by_email` (text)
+- `image_url`, `image_optimized_url` (text)
+- `is_optimized` (boolean)
+
 **Audit Trail**
 - `created_at`, `updated_at` (timestamps)
 - `push_to_pim` (integration status)
@@ -138,6 +175,16 @@ ALTER TABLE public.products
   ADD COLUMN IF NOT EXISTS confirmed_by_email text,
   ADD COLUMN IF NOT EXISTS locked_until timestamptz,
   ADD COLUMN IF NOT EXISTS is_rejected boolean NOT NULL DEFAULT false;
+
+-- Create ENUM type for image status
+CREATE TYPE public.image_status_enum AS ENUM ('approved', 'rejected', 'replace_later');
+
+-- Add image workflow columns
+ALTER TABLE public.products
+  ADD COLUMN IF NOT EXISTS image_status public.image_status_enum DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS image_confirmed boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS image_rejected boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS image_confirmed_by_email text;
 
 -- Create update trigger
 CREATE OR REPLACE FUNCTION public.set_updated_at()

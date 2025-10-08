@@ -34,8 +34,7 @@ export default function AdminImagesPage() {
             const { data, error } = await supabase
                 .from('products')
                 .select('*')
-                .eq('image_confirmed', false)
-                .eq('image_rejected', false)
+                .is('image_status', null)
                 .not('image_optimized_url', 'is', null)
                 .limit(50)
 
@@ -49,8 +48,7 @@ export default function AdminImagesPage() {
             const { count: remainingCount } = await supabase
                 .from('products')
                 .select('id', { count: 'exact', head: true })
-                .eq('image_confirmed', false)
-                .eq('image_rejected', false)
+                .is('image_status', null)
                 .not('image_optimized_url', 'is', null)
             setRemainingToConfirm(remainingCount ?? 0)
         } catch {
@@ -60,7 +58,7 @@ export default function AdminImagesPage() {
         setLoading(false)
     }
 
-    async function confirmImage(product: Row) {
+    async function updateImageStatus(product: Row, status: 'approved' | 'rejected' | 'replace_later') {
         if (!currentUserEmail) {
             alert('Нет email пользователя. Авторизуйтесь заново.')
             return
@@ -69,37 +67,15 @@ export default function AdminImagesPage() {
         const { error } = await supabase
             .from('products')
             .update({
-                image_confirmed: true,
-                image_confirmed_by_email: currentUserEmail,
+                image_status: status,
+                image_confirmed: status === 'approved',
+                image_confirmed_by_email: status === 'approved' ? currentUserEmail : null,
+                image_rejected: status === 'rejected',
             })
             .eq('id', product.id)
             
         if (error) {
-            alert(`Ошибка подтверждения: ${error.message}`)
-            return
-        }
-
-        // Переходим к следующей картинке
-        setRemainingToConfirm(prev => Math.max(0, prev - 1))
-        if (currentIndex < products.length - 1) {
-            setCurrentIndex(currentIndex + 1)
-        } else {
-            // Загружаем новую порцию
-            await fetchProducts()
-            setCurrentIndex(0)
-        }
-    }
-
-    async function rejectImage(product: Row) {
-        const { error } = await supabase
-            .from('products')
-            .update({
-                image_rejected: true,
-            })
-            .eq('id', product.id)
-            
-        if (error) {
-            alert(`Ошибка отклонения: ${error.message}`)
+            alert(`Ошибка обновления статуса: ${error.message}`)
             return
         }
 
@@ -195,42 +171,49 @@ export default function AdminImagesPage() {
                                 </div>
 
                                 {/* Статус */}
-                                <div className="text-center">
-                                    <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium ${
-                                        currentProduct.image_confirmed 
-                                            ? 'bg-green-100 text-green-800' 
-                                            : 'bg-yellow-100 text-yellow-800'
-                                    }`}>
-                                        {currentProduct.image_confirmed ? '✓ Проверено' : '⏳ Не проверено'}
+                                <div className="text-center mt-4">
+                                    <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                                        ⏳ Ожидает проверки
                                     </span>
                                 </div>
                                 {imageSize && (
-                                    <p className="text-sm text-gray-600">
+                                    <p className="text-sm text-gray-600 mt-4">
                                         Размер: <span className="font-medium">{imageSize.w} × {imageSize.h}</span> px
                                     </p>
                                 )}
 
                                 {/* Кнопки управления */}
-                                <div className="flex items-center gap-8">
+                                <div className="flex items-center gap-4 mt-4">
                                     <button
-                                        onClick={() => rejectImage(currentProduct)}
+                                        onClick={() => updateImageStatus(currentProduct, 'rejected')}
                                         className="flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium cursor-pointer"
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                             <line x1="18" y1="6" x2="6" y2="18"></line>
                                             <line x1="6" y1="6" x2="18" y2="18"></line>
                                         </svg>
-                                        Отклонить изображения
+                                        Отклонено
                                     </button>
                                     
                                     <button
-                                        onClick={() => confirmImage(currentProduct)}
+                                        onClick={() => updateImageStatus(currentProduct, 'replace_later')}
+                                        className="flex items-center gap-2 px-6 py-3 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors font-medium cursor-pointer"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <polyline points="12 6 12 12 16 14"></polyline>
+                                        </svg>
+                                        Требуется замена
+                                    </button>
+
+                                    <button
+                                        onClick={() => updateImageStatus(currentProduct, 'approved')}
                                         className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors font-medium cursor-pointer"
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                             <polyline points="20 6 9 17 4 12"></polyline>
                                         </svg>
-                                        Подтвердить изображения
+                                        Подтверждено
                                     </button>
                                 </div>
                             </div>

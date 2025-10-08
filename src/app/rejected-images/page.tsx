@@ -27,7 +27,7 @@ const fetchProducts = useCallback(async () => {
         const { data, error, count } = await supabase
             .from('products')
             .select('*', { count: 'exact' })
-            .eq('image_rejected', true)
+            .eq('image_status', 'rejected')
             .order('updated_at', { ascending: sortOrder === 'asc' })
             .range((page - 1) * pageSize, page * pageSize - 1)
 
@@ -51,7 +51,12 @@ useEffect(() => {
 async function restoreImage(product: Row) {
     const { error } = await supabase
         .from('products')
-        .update({ image_rejected: false })
+        .update({ 
+            image_status: null,
+            image_rejected: false,
+            image_confirmed: false,
+            image_confirmed_by_email: null
+        })
         .eq('id', product.id)
 
     if (error) {
