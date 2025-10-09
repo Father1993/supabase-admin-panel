@@ -1,23 +1,23 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import type { Metadata } from 'next'
+import { Geist, Geist_Mono } from 'next/font/google'
+import './globals.css'
 
 const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+  variable: '--font-geist-sans',
+  subsets: ['latin'],
+})
 
 const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+  variable: '--font-geist-mono',
+  subsets: ['latin'],
+})
 
 export const metadata: Metadata = {
-  title: "Uroven | Админка",
-  description: "Админка для оценки AI-генерированных описаний товаров",
-  applicationName: "Uroven Admin",
-  authors: [{ name: "Spinej Andrej" }],
-  creator: "Spinej Andrej",
+  title: 'Uroven | Админка',
+  description: 'Админка для оценки AI-генерированных описаний товаров',
+  applicationName: 'Uroven Admin',
+  authors: [{ name: 'Spinej Andrej' }],
+  creator: 'Spinej Andrej',
   robots: {
     index: false,
     follow: false,
@@ -30,20 +30,20 @@ export const metadata: Metadata = {
       noarchive: true,
     },
   },
-};
+}
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode;
+  children: React.ReactNode
 }>) {
   return (
-    <html lang="ru">
+    <html lang='ru'>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
       </body>
     </html>
-  );
+  )
 }
