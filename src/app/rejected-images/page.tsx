@@ -5,6 +5,10 @@ import { supabase } from '@/lib/supabaseClient'
 import { Row } from '@/types/products'
 import { Header } from '@/components/Header'
 import { PaginationBar } from '@/components/PaginationBar'
+import { SortSelect } from '@/components/SortSelect'
+import { LoadingSpinner, ErrorMessage, EmptyState } from '@/components/UIStates'
+import Image from 'next/image'
+
 export default function RejectedImagesPage() {
   const [products, setProducts] = useState<Row[]>([])
   const [loading, setLoading] = useState(true)
@@ -79,17 +83,7 @@ export default function RejectedImagesPage() {
       <div className='max-w-7xl mx-auto px-6 py-8 space-y-6'>
         {/* Сортировка */}
         <div className='bg-white rounded-lg border p-4'>
-          <label className='block text-sm font-medium text-gray-700 mb-2'>
-            Сортировка по дате обновления:
-          </label>
-          <select
-            value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value as 'desc' | 'asc')}
-            className='px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white'
-          >
-            <option value='desc'>Сначала свежие</option>
-            <option value='asc'>Сначала старые</option>
-          </select>
+          <SortSelect value={sortOrder} onChange={setSortOrder} />
         </div>
 
         {/* Пагинация сверху */}
@@ -102,23 +96,10 @@ export default function RejectedImagesPage() {
           />
         )}
 
-        {loading && (
-          <div className='flex items-center justify-center py-12'>
-            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600'></div>
-            <p className='text-slate-600 ml-3'>Загрузка...</p>
-          </div>
-        )}
-
-        {error && (
-          <div className='bg-red-50 border border-red-200 rounded-lg p-4'>
-            <p className='text-red-800'>Ошибка: {error}</p>
-          </div>
-        )}
-
+        {loading && <LoadingSpinner />}
+        {error && <ErrorMessage error={error} />}
         {!loading && !error && products.length === 0 && (
-          <div className='bg-blue-50 border border-blue-200 rounded-lg p-6 text-center'>
-            <p className='text-blue-800'>Нет отклоненных изображений.</p>
-          </div>
+          <EmptyState message='Нет отклоненных изображений.' />
         )}
 
         {/* Список товаров */}
@@ -132,8 +113,8 @@ export default function RejectedImagesPage() {
                 {/* Изображение */}
                 <div className='aspect-square relative bg-gray-100'>
                   {product.image_optimized_url ? (
-                    // TODO Поменять на Image
-                    <img
+                    <Image
+                      fill
                       src={product.image_optimized_url}
                       alt={product.product_name || 'Изображение товара'}
                       className='w-full h-full object-contain'

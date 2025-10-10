@@ -6,6 +6,12 @@ import { Row } from '@/types/products'
 import { Header } from '@/components/Header'
 import { PaginationBar } from '@/components/PaginationBar'
 import { ChangeEvent } from 'react'
+import Image from 'next/image'
+import { UserStatsPanel } from '@/components/UserStatsPanel'
+import { UserFilter } from '@/components/UserFilter'
+import { SortSelect } from '@/components/SortSelect'
+import { LoadingSpinner, ErrorMessage, EmptyState } from '@/components/UIStates'
+import { ADMIN_EMAILS } from '@/config/admin'
 
 export default function ImagesPage() {
   const [products, setProducts] = useState<Row[]>([])
@@ -18,6 +24,10 @@ export default function ImagesPage() {
   const [filterStatus, setFilterStatus] = useState<
     'all' | 'approved' | 'rejected' | 'replace_later' | 'pending'
   >('all')
+  const [currentUser, setCurrentUser] = useState<string | null>(null)
+  const [emails, setEmails] = useState<string[]>([])
+  const [selectedUser, setSelectedUser] = useState<string | null>(null)
+  const [hasNoEmailItems, setHasNoEmailItems] = useState(false)
   const pageSize = 52
 
   const fetchProducts = useCallback(async () => {
@@ -28,6 +38,33 @@ export default function ImagesPage() {
       window.location.href = '/login'
       return
     }
+
+    const userEmail = user.email ?? null
+    setCurrentUser(userEmail)
+
+    // Загрузка списка email'ов для админов
+    if (userEmail && ADMIN_EMAILS.includes(userEmail) && !emails.length) {
+      const { data: emailData } = await supabase
+        .from('products')
+        .select('image_confirmed_by_email')
+        .in('image_status', ['approved', 'rejected', 'replace_later'])
+        .not('image_confirmed_by_email', 'is', null)
+      const uniqueEmails = [
+        ...new Set(
+          emailData?.map((d) => d.image_confirmed_by_email).filter(Boolean)
+        ),
+      ] as string[]
+      setEmails(uniqueEmails.sort())
+
+      // Проверка наличия элементов без почты
+      const { count } = await supabase
+        .from('products')
+        .select('id', { count: 'exact', head: true })
+        .in('image_status', ['approved', 'rejected', 'replace_later'])
+        .is('image_confirmed_by_email', null)
+      setHasNoEmailItems((count ?? 0) > 0)
+    }
+
     setLoading(true)
     setError(null)
 
@@ -37,15 +74,38 @@ export default function ImagesPage() {
         .select('*', { count: 'exact' })
         .not('image_optimized_url', 'is', null)
 
-      // Применяем фильтр по статусу
-      if (filterStatus === 'approved') {
-        query = query.eq('image_status', 'approved')
-      } else if (filterStatus === 'rejected') {
-        query = query.eq('image_status', 'rejected')
-      } else if (filterStatus === 'replace_later') {
-        query = query.eq('image_status', 'replace_later')
-      } else if (filterStatus === 'pending') {
-        query = query.is('image_status', null)
+      // Фильтр по пользователю
+      if (selectedUser) {
+        if (selectedUser === '__no_email__') {
+          query = query.is('image_confirmed_by_email', null)
+          // Показываем только подтвержденные (не pending)
+          query = query.in('image_status', [
+            'approved',
+            'rejected',
+            'replace_later',
+          ])
+        } else {
+          query = query.eq('image_confirmed_by_email', selectedUser)
+        }
+        // Фильтрация по статусу
+        if (filterStatus === 'approved') {
+          query = query.eq('image_status', 'approved')
+        } else if (filterStatus === 'rejected') {
+          query = query.eq('image_status', 'rejected')
+        } else if (filterStatus === 'replace_later') {
+          query = query.eq('image_status', 'replace_later')
+        }
+      } else {
+        // Без фильтра по пользователю - обычная фильтрация по статусу
+        if (filterStatus === 'approved') {
+          query = query.eq('image_status', 'approved')
+        } else if (filterStatus === 'rejected') {
+          query = query.eq('image_status', 'rejected')
+        } else if (filterStatus === 'replace_later') {
+          query = query.eq('image_status', 'replace_later')
+        } else if (filterStatus === 'pending') {
+          query = query.is('image_status', null)
+        }
       }
 
       query = query
@@ -73,7 +133,7 @@ export default function ImagesPage() {
     }
 
     setLoading(false)
-  }, [page, sortOrder, filterStatus])
+  }, [page, sortOrder, filterStatus, selectedUser]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fetchProducts()
@@ -89,7 +149,17 @@ export default function ImagesPage() {
       <div className='max-w-7xl mx-auto px-4 py-6 space-y-4'>
         {/* Фильтры и сортировка */}
         <div className='bg-white rounded-lg border p-4 space-y-4'>
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+          <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+            <UserFilter
+              emails={emails}
+              selected={selectedUser}
+              onChange={(email) => {
+                setSelectedUser(email)
+                setPage(1)
+              }}
+              currentUser={currentUser}
+              hasNoEmailItems={hasNoEmailItems}
+            />
             <div>
               <label className='block text-sm font-medium text-gray-700 mb-2'>
                 Фильтр по статусу:
@@ -109,22 +179,15 @@ export default function ImagesPage() {
                 <option value='rejected'>Отклонено</option>
               </select>
             </div>
-            <div>
-              <label className='block text-sm font-medium text-gray-700 mb-2'>
-                Сортировка по дате:
-              </label>
-              <select
-                value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value as 'desc' | 'asc')}
-                className='w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white'
-              >
-                <option value='desc'>Сначала свежие</option>
-                <option value='asc'>Сначала старые</option>
-              </select>
-            </div>
+            <SortSelect
+              value={sortOrder}
+              onChange={setSortOrder}
+              label='Сортировка по дате:'
+            />
           </div>
         </div>
-
+        {/* Статистика */}
+        <UserStatsPanel type='images' />
         {/* Пагинация сверху */}
         {!loading && (
           <PaginationBar
@@ -136,18 +199,8 @@ export default function ImagesPage() {
           />
         )}
 
-        {loading && (
-          <div className='flex items-center justify-center py-12'>
-            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600'></div>
-            <p className='text-slate-600 ml-3'>Загрузка...</p>
-          </div>
-        )}
-
-        {error && (
-          <div className='bg-red-50 border border-red-200 rounded-lg p-4'>
-            <p className='text-red-800'>Ошибка: {error}</p>
-          </div>
-        )}
+        {loading && <LoadingSpinner />}
+        {error && <ErrorMessage error={error} />}
 
         {/* Список изображений */}
         {!loading && !error && products.length > 0 && (
@@ -160,8 +213,8 @@ export default function ImagesPage() {
                 {/* Изображение */}
                 <div className='aspect-square relative bg-gray-100'>
                   {product.image_optimized_url ? (
-                    // TODO Поменять на Image
-                    <img
+                    <Image
+                      fill
                       src={product.image_optimized_url}
                       alt={product.product_name || 'Изображение товара'}
                       className='w-full h-full object-contain'
@@ -263,9 +316,7 @@ export default function ImagesPage() {
         )}
 
         {!loading && !error && products.length === 0 && (
-          <div className='bg-blue-50 border border-blue-200 rounded-lg p-6 text-center'>
-            <p className='text-blue-800'>Нет изображений для отображения.</p>
-          </div>
+          <EmptyState message='Нет изображений для отображения.' />
         )}
 
         {/* Пагинация снизу */}

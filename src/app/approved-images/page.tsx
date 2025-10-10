@@ -5,6 +5,10 @@ import { supabase } from '@/lib/supabaseClient'
 import { Row } from '@/types/products'
 import { Header } from '@/components/Header'
 import { PaginationBar } from '@/components/PaginationBar'
+import { UserFilter } from '@/components/UserFilter'
+import { SortSelect } from '@/components/SortSelect'
+import { LoadingSpinner, ErrorMessage, EmptyState } from '@/components/UIStates'
+import Image from 'next/image'
 import { ADMIN_EMAILS } from '@/config/admin'
 
 export default function ApprovedImagesPage() {
@@ -15,10 +19,9 @@ export default function ApprovedImagesPage() {
   const [total, setTotal] = useState(0)
   const [currentUser, setCurrentUser] = useState<string | null>(null)
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc')
-  const [userStats, setUserStats] = useState<
-    { email: string; count: number }[]
-  >([])
-  const [isSpecialUser, setIsSpecialUser] = useState(false)
+  const [emails, setEmails] = useState<string[]>([])
+  const [selectedUser, setSelectedUser] = useState<string | null>(null)
+  const [hasNoEmailItems, setHasNoEmailItems] = useState(false)
   const pageSize = 50
 
   const fetchProducts = useCallback(async () => {
@@ -31,20 +34,50 @@ export default function ApprovedImagesPage() {
     }
     const userEmail = user.email ?? null
     setCurrentUser(userEmail)
+
+    // Загрузка списка email'ов для админов
+    if (userEmail && ADMIN_EMAILS.includes(userEmail) && !emails.length) {
+      const { data: emailData } = await supabase
+        .from('products')
+        .select('image_confirmed_by_email')
+        .eq('image_status', 'approved')
+        .not('image_confirmed_by_email', 'is', null)
+      const uniqueEmails = [
+        ...new Set(
+          emailData?.map((d) => d.image_confirmed_by_email).filter(Boolean)
+        ),
+      ] as string[]
+      setEmails(uniqueEmails.sort())
+
+      // Проверка наличия элементов без почты
+      const { count } = await supabase
+        .from('products')
+        .select('id', { count: 'exact', head: true })
+        .eq('image_status', 'approved')
+        .is('image_confirmed_by_email', null)
+      setHasNoEmailItems((count ?? 0) > 0)
+    }
+
     setLoading(true)
     setError(null)
-
-    const isSpecial = userEmail !== null && ADMIN_EMAILS.includes(userEmail)
-    setIsSpecialUser(isSpecial)
-
     try {
-      const { data, error, count } = await supabase
+      let query = supabase
         .from('products')
         .select('*', { count: 'exact' })
         .eq('image_status', 'approved')
-        .eq('image_confirmed_by_email', user.email)
+
+      if (selectedUser === '__no_email__') {
+        query = query.is('image_confirmed_by_email', null)
+      } else {
+        const filterEmail = selectedUser || user.email
+        query = query.eq('image_confirmed_by_email', filterEmail)
+      }
+
+      query = query
         .order('updated_at', { ascending: sortOrder === 'asc' })
         .range((page - 1) * pageSize, page * pageSize - 1)
+
+      const { data, error, count } = await query
 
       if (error) {
         setError(error.message)
@@ -55,35 +88,8 @@ export default function ApprovedImagesPage() {
     } catch {
       setError('Ошибка загрузки данных')
     }
-
-    if (isSpecial) {
-      try {
-        const { data: allConfirmedData, error: statsError } = await supabase
-          .from('products')
-          .select('image_confirmed_by_email')
-          .eq('image_status', 'approved')
-          .not('image_confirmed_by_email', 'is', null)
-
-        if (!statsError && allConfirmedData) {
-          const stats: Record<string, number> = {}
-          allConfirmedData.forEach((item) => {
-            const email = item.image_confirmed_by_email as string
-            stats[email] = (stats[email] || 0) + 1
-          })
-
-          const statsArray = Object.entries(stats)
-            .map(([email, count]) => ({ email, count }))
-            .sort((a, b) => b.count - a.count)
-
-          setUserStats(statsArray)
-        }
-      } catch (err) {
-        console.error('Ошибка при загрузке статистики:', err)
-      }
-    }
-
     setLoading(false)
-  }, [page, sortOrder]) // только реальные зависимости
+  }, [page, sortOrder, selectedUser]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fetchProducts()
@@ -97,62 +103,19 @@ export default function ApprovedImagesPage() {
       />
 
       <div className='max-w-7xl mx-auto px-6 py-8 space-y-6'>
-        {/* Статистика для специального пользователя */}
-        {isSpecialUser && userStats.length > 0 && (
-          <div className='bg-indigo-50 border border-indigo-200 rounded-lg p-5 shadow-sm'>
-            <div className='flex justify-between items-center mb-3'>
-              <h3 className='text-lg font-bold text-indigo-700'>
-                Статистика подтверждений изображений
-              </h3>
-              <div className='bg-indigo-100 text-indigo-600 text-xs rounded-full px-3 py-1'>
-                Доступно только администраторам
-              </div>
-            </div>
-            <div className='overflow-hidden rounded-lg border border-indigo-200 bg-white'>
-              <table className='min-w-full divide-y divide-indigo-200'>
-                <thead className='bg-indigo-50'>
-                  <tr>
-                    <th className='px-4 py-3 text-left text-xs font-medium text-indigo-800 uppercase tracking-wider'>
-                      Email сотрудника
-                    </th>
-                    <th className='px-4 py-3 text-left text-xs font-medium text-indigo-800 uppercase tracking-wider'>
-                      Количество подтверждений
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className='bg-white divide-y divide-indigo-100'>
-                  {userStats.map((stat, idx) => (
-                    <tr
-                      key={idx}
-                      className={idx % 2 === 0 ? 'bg-white' : 'bg-indigo-50'}
-                    >
-                      <td className='px-4 py-2 whitespace-nowrap text-sm text-gray-900'>
-                        {stat.email}
-                      </td>
-                      <td className='px-4 py-2 whitespace-nowrap text-sm font-medium text-indigo-700'>
-                        {stat.count}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* Сортировка */}
-        <div className='bg-white rounded-lg border p-4'>
-          <label className='block text-sm font-medium text-gray-700 mb-2'>
-            Сортировка по дате обновления:
-          </label>
-          <select
-            value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value as 'desc' | 'asc')}
-            className='px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white'
-          >
-            <option value='desc'>Сначала свежие</option>
-            <option value='asc'>Сначала старые</option>
-          </select>
+        {/* Фильтры и сортировка */}
+        <div className='bg-white rounded-lg border p-4 grid grid-cols-1 md:grid-cols-2 gap-4'>
+          <UserFilter
+            emails={emails}
+            selected={selectedUser}
+            onChange={(email) => {
+              setSelectedUser(email)
+              setPage(1)
+            }}
+            currentUser={currentUser}
+            hasNoEmailItems={hasNoEmailItems}
+          />
+          <SortSelect value={sortOrder} onChange={setSortOrder} />
         </div>
 
         {/* Пагинация сверху */}
@@ -165,25 +128,10 @@ export default function ApprovedImagesPage() {
           />
         )}
 
-        {loading && (
-          <div className='flex items-center justify-center py-12'>
-            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600'></div>
-            <p className='text-slate-600 ml-3'>Загрузка...</p>
-          </div>
-        )}
-
-        {error && (
-          <div className='bg-red-50 border border-red-200 rounded-lg p-4'>
-            <p className='text-red-800'>Ошибка: {error}</p>
-          </div>
-        )}
-
+        {loading && <LoadingSpinner />}
+        {error && <ErrorMessage error={error} />}
         {!loading && !error && products.length === 0 && (
-          <div className='bg-blue-50 border border-blue-200 rounded-lg p-6 text-center'>
-            <p className='text-blue-800'>
-              У вас пока нет подтвержденных изображений.
-            </p>
-          </div>
+          <EmptyState message='У вас пока нет подтвержденных изображений.' />
         )}
 
         {/* Список товаров */}
@@ -197,8 +145,8 @@ export default function ApprovedImagesPage() {
                 {/* Изображение */}
                 <div className='aspect-square relative bg-gray-100'>
                   {product.image_optimized_url ? (
-                    // TODO Поменять на Image
-                    <img
+                    <Image
+                      fill
                       src={product.image_optimized_url}
                       alt={product.product_name || 'Изображение товара'}
                       className='w-full h-full object-contain'

@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { Row } from '@/types/products'
 import { Header } from '@/components/Header'
+import { LoadingSpinner, ErrorMessage } from '@/components/UIStates'
+import Image from 'next/image'
 
 export default function AdminImagesPage() {
   const [products, setProducts] = useState<Row[]>([])
@@ -13,9 +15,10 @@ export default function AdminImagesPage() {
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null)
   const [remainingToConfirm, setRemainingToConfirm] = useState(0)
 
-  const [imageSize, setImageSize] = useState<{ w: number; h: number } | null>(
-    null
-  )
+  const [imageSize, setImageSize] = useState<{ w: number; h: number }>({
+    w: 750,
+    h: 1000,
+  })
 
   useEffect(() => {
     fetchProducts()
@@ -76,8 +79,7 @@ export default function AdminImagesPage() {
       .update({
         image_status: status,
         image_confirmed: status === 'approved',
-        image_confirmed_by_email:
-          status === 'approved' ? currentUserEmail : null,
+        image_confirmed_by_email: currentUserEmail,
         image_rejected: status === 'rejected',
       })
       .eq('id', product.id)
@@ -118,18 +120,8 @@ export default function AdminImagesPage() {
           </div>
         </div>
 
-        {loading && (
-          <div className='flex items-center justify-center py-12'>
-            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600'></div>
-            <p className='text-slate-600 ml-3'>Загрузка...</p>
-          </div>
-        )}
-
-        {error && (
-          <div className='bg-red-50 border border-red-200 rounded-lg p-4'>
-            <p className='text-red-800'>Ошибка: {error}</p>
-          </div>
-        )}
+        {loading && <LoadingSpinner />}
+        {error && <ErrorMessage error={error} />}
 
         {!loading && !error && currentProduct && (
           <div className='bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden'>
@@ -167,16 +159,17 @@ export default function AdminImagesPage() {
               <div className='flex flex-col items-center  overflow-auto  w-full h-full'>
                 {/* Изображение */}
 
-                <div className='relative  border-1 border-orange-300 p-0 bg-gray-100 rounded-0 '>
+                <div className='border-1 border-orange-300 p-0 bg-gray-100 rounded-0 relative'>
                   {currentProduct.image_optimized_url && (
-                    // TODO Поменять на Image
-                    <img
-                      className=' '
+                    <Image
+                      width={imageSize.w}
+                      height={imageSize.h}
                       src={currentProduct.image_optimized_url}
                       alt={currentProduct.product_name || 'Изображение товара'}
                       style={{
-                        minWidth: imageSize?.w,
-                        minHeight: imageSize?.h,
+                        width: 'auto',
+                        height: 'auto',
+                        maxWidth: 'none',
                       }}
                       onLoad={(e) => {
                         const img = e.currentTarget
@@ -187,6 +180,72 @@ export default function AdminImagesPage() {
                       }}
                     />
                   )}
+                  {/* Сетка: отступы 100px и 150px со всех сторон */}
+                  <div className='absolute inset-0 pointer-events-none opacity-40'>
+                    {/* Вертикальные линии слева: 100px и 150px */}
+                    <div
+                      className='absolute top-0 bottom-0 left-[100px] w-px'
+                      style={{
+                        backgroundImage:
+                          'repeating-linear-gradient(to bottom, #ffb86a 0, #ffb86a 10px, transparent 10px, transparent 15px)',
+                      }}
+                    />
+                    <div
+                      className='absolute top-0 bottom-0 left-[150px] w-px'
+                      style={{
+                        backgroundImage:
+                          'repeating-linear-gradient(to bottom, #ffb86a 0, #ffb86a 10px, transparent 10px, transparent 15px)',
+                      }}
+                    />
+
+                    {/* Вертикальные линии справа: 100px и 150px */}
+                    <div
+                      className='absolute top-0 bottom-0 right-[100px] w-px'
+                      style={{
+                        backgroundImage:
+                          'repeating-linear-gradient(to bottom, #ffb86a 0, #ffb86a 10px, transparent 10px, transparent 15px)',
+                      }}
+                    />
+                    <div
+                      className='absolute top-0 bottom-0 right-[150px] w-px'
+                      style={{
+                        backgroundImage:
+                          'repeating-linear-gradient(to bottom, #ffb86a 0, #ffb86a 10px, transparent 10px, transparent 15px)',
+                      }}
+                    />
+
+                    {/* Горизонтальные линии сверху: 100px и 150px */}
+                    <div
+                      className='absolute left-0 right-0 top-[100px] h-px'
+                      style={{
+                        backgroundImage:
+                          'repeating-linear-gradient(to right, #ffb86a 0, #ffb86a 10px, transparent 10px, transparent 15px)',
+                      }}
+                    />
+                    <div
+                      className='absolute left-0 right-0 top-[150px] h-px'
+                      style={{
+                        backgroundImage:
+                          'repeating-linear-gradient(to right, #ffb86a 0, #ffb86a 10px, transparent 10px, transparent 15px)',
+                      }}
+                    />
+
+                    {/* Горизонтальные линии снизу: 100px и 150px */}
+                    <div
+                      className='absolute left-0 right-0 bottom-[100px] h-px'
+                      style={{
+                        backgroundImage:
+                          'repeating-linear-gradient(to right, #ffb86a 0, #ffb86a 10px, transparent 10px, transparent 15px)',
+                      }}
+                    />
+                    <div
+                      className='absolute left-0 right-0 bottom-[150px] h-px'
+                      style={{
+                        backgroundImage:
+                          'repeating-linear-gradient(to right, #ffb86a 0, #ffb86a 10px, transparent 10px, transparent 15px)',
+                      }}
+                    />
+                  </div>
                 </div>
 
                 {/* Статус */}
