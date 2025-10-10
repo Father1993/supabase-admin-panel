@@ -8,6 +8,8 @@ import { Header } from '@/components/Header'
 import { PaginationBar } from '@/components/PaginationBar'
 import { ProductImage } from '@/components/ProductImage'
 import { ProductHeader } from '@/components/ProductHeader'
+import { UserFilter } from '@/components/UserFilter'
+import { ADMIN_EMAILS } from '@/config/admin'
 
 export default function ApprovedProductsPage() {
   const [products, setProducts] = useState<Row[]>([])
@@ -17,11 +19,14 @@ export default function ApprovedProductsPage() {
   const [total, setTotal] = useState(0)
   const [currentUser, setCurrentUser] = useState<string | null>(null)
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc')
+  const [emails, setEmails] = useState<string[]>([])
+  const [selectedUser, setSelectedUser] = useState<string | null>(null)
+  const [hasNoEmailItems, setHasNoEmailItems] = useState(false)
   const pageSize = 50
 
   useEffect(() => {
     fetchProducts()
-  }, [page, sortOrder]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [page, sortOrder, selectedUser]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function fetchProducts() {
     const {
@@ -33,18 +38,47 @@ export default function ApprovedProductsPage() {
     }
     const userEmail = user.email ?? null
     setCurrentUser(userEmail)
+    
+    // Загрузка списка email'ов для админов
+    if (userEmail && ADMIN_EMAILS.includes(userEmail) && !emails.length) {
+      const { data: emailData } = await supabase
+        .from('products')
+        .select('confirmed_by_email')
+        .eq('description_confirmed', true)
+        .not('confirmed_by_email', 'is', null)
+      const uniqueEmails = [...new Set(emailData?.map(d => d.confirmed_by_email).filter(Boolean))] as string[]
+      setEmails(uniqueEmails.sort())
+      
+      // Проверка наличия элементов без почты
+      const { count } = await supabase
+        .from('products')
+        .select('id', { count: 'exact', head: true })
+        .eq('description_confirmed', true)
+        .is('confirmed_by_email', null)
+      setHasNoEmailItems((count ?? 0) > 0)
+    }
+    
     setLoading(true)
     setError(null)
-    // Проверка, имеет ли пользователь доступ к статистике
 
     try {
-      const { data, error, count } = await supabase
+      let query = supabase
         .from('products')
         .select('*', { count: 'exact' })
         .eq('description_confirmed', true)
-        .eq('confirmed_by_email', user.email)
+        
+      if (selectedUser === '__no_email__') {
+        query = query.is('confirmed_by_email', null)
+      } else {
+        const filterEmail = selectedUser || user.email
+        query = query.eq('confirmed_by_email', filterEmail)
+      }
+      
+      query = query
         .order('updated_at', { ascending: sortOrder === 'asc' })
         .range((page - 1) * pageSize, page * pageSize - 1)
+      
+      const { data, error, count } = await query
 
       if (error) {
         setError(error.message)
@@ -66,19 +100,28 @@ export default function ApprovedProductsPage() {
       />
 
       <div className='max-w-7xl mx-auto px-6 py-8 space-y-6'>
-        {/* Сортировка */}
-        <div className='bg-white rounded-lg border p-4'>
-          <label className='block text-sm font-medium text-gray-700 mb-2'>
-            Сортировка по дате обновления:
-          </label>
-          <select
-            value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value as 'desc' | 'asc')}
-            className='px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white'
-          >
-            <option value='desc'>Сначала свежие</option>
-            <option value='asc'>Сначала старые</option>
-          </select>
+        {/* Фильтры и сортировка */}
+        <div className='bg-white rounded-lg border p-4 grid grid-cols-1 md:grid-cols-2 gap-4'>
+          <UserFilter
+            emails={emails}
+            selected={selectedUser}
+            onChange={(email) => { setSelectedUser(email); setPage(1) }}
+            currentUser={currentUser}
+            hasNoEmailItems={hasNoEmailItems}
+          />
+          <div>
+            <label className='block text-sm font-medium text-gray-700 mb-2'>
+              Сортировка по дате обновления:
+            </label>
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as 'desc' | 'asc')}
+              className='w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white'
+            >
+              <option value='desc'>Сначала свежие</option>
+              <option value='asc'>Сначала старые</option>
+            </select>
+          </div>
         </div>
 
         {/* Пагинация сверху */}

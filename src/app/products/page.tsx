@@ -10,6 +10,8 @@ import { ProductImage } from '@/components/ProductImage'
 import { ProductHeader } from '@/components/ProductHeader'
 import { ProductSearch } from '@/components/ProductSearch'
 import { UserStatsPanel } from '@/components/UserStatsPanel'
+import { UserFilter } from '@/components/UserFilter'
+import { ADMIN_EMAILS } from '@/config/admin'
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Row[]>([])
@@ -20,6 +22,10 @@ export default function ProductsPage() {
   const [remainingToConfirm, setRemainingToConfirm] = useState(0)
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc')
   const [selectedProduct, setSelectedProduct] = useState<Row | null>(null)
+  const [currentUser, setCurrentUser] = useState<string | null>(null)
+  const [emails, setEmails] = useState<string[]>([])
+  const [selectedUser, setSelectedUser] = useState<string | null>(null)
+  const [hasNoEmailItems, setHasNoEmailItems] = useState(false)
 
   const handleSelectProduct = (product: Row | null) => {
     setSelectedProduct(product)
@@ -29,7 +35,7 @@ export default function ProductsPage() {
 
   useEffect(() => {
     fetchProducts()
-  }, [page, sortOrder, selectedProduct]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [page, sortOrder, selectedProduct, selectedUser]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function searchProducts(query: string): Promise<Row[]> {
     const { data } = await supabase
@@ -51,6 +57,30 @@ export default function ProductsPage() {
       window.location.href = '/login'
       return
     }
+    
+    const userEmail = user.email ?? null
+    setCurrentUser(userEmail)
+    
+    // Загрузка списка email'ов для админов
+    if (userEmail && ADMIN_EMAILS.includes(userEmail) && !emails.length) {
+      const { data: emailData } = await supabase
+        .from('products')
+        .select('confirmed_by_email')
+        .eq('description_confirmed', true)
+        .not('confirmed_by_email', 'is', null)
+      const uniqueEmails = [...new Set(emailData?.map(d => d.confirmed_by_email).filter(Boolean))] as string[]
+      setEmails(uniqueEmails.sort())
+      
+      // Проверка наличия элементов без почты
+      const { count } = await supabase
+        .from('products')
+        .select('id', { count: 'exact', head: true })
+        .eq('description_added', true)
+        .is('confirmed_by_email', null)
+        .or('description_confirmed.eq.true,is_rejected.eq.true')
+      setHasNoEmailItems((count ?? 0) > 0)
+    }
+    
     setLoading(true)
     setError(null)
 
@@ -63,6 +93,17 @@ export default function ProductsPage() {
       if (selectedProduct) {
         query = query.eq('id', selectedProduct.id)
       } else {
+        // Фильтр по пользователю
+        if (selectedUser) {
+          if (selectedUser === '__no_email__') {
+            query = query.is('confirmed_by_email', null)
+            // Показываем только подтвержденные или отклоненные
+            query = query.or('description_confirmed.eq.true,is_rejected.eq.true')
+          } else {
+            query = query.eq('confirmed_by_email', selectedUser)
+          }
+        }
+        
         query = query
           .order('updated_at', { ascending: sortOrder === 'asc' })
           .range((page - 1) * pageSize, page * pageSize - 1)
@@ -101,20 +142,29 @@ export default function ProductsPage() {
       />
 
       <div className='max-w-7xl mx-auto px-4 py-6 space-y-4'>
-        {/* Сортировка */}
+        {/* Фильтры и сортировка */}
         {!selectedProduct && (
-          <div className='bg-white rounded-lg border p-2'>
-            <label className='block text-sm font-medium text-gray-700'>
-              Сортировка по дате обновления:
-            </label>
-            <select
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value as 'desc' | 'asc')}
-              className='px-1 py-1 border rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white'
-            >
-              <option value='desc'>Сначала свежие</option>
-              <option value='asc'>Сначала старые</option>
-            </select>
+          <div className='bg-white rounded-lg border p-4 grid grid-cols-1 md:grid-cols-2 gap-4'>
+            <UserFilter
+              emails={emails}
+              selected={selectedUser}
+              onChange={(email) => { setSelectedUser(email); setPage(1) }}
+              currentUser={currentUser}
+              hasNoEmailItems={hasNoEmailItems}
+            />
+            <div>
+              <label className='block text-sm font-medium text-gray-700 mb-2'>
+                Сортировка по дате обновления:
+              </label>
+              <select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value as 'desc' | 'asc')}
+                className='w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white'
+              >
+                <option value='desc'>Сначала свежие</option>
+                <option value='asc'>Сначала старые</option>
+              </select>
+            </div>
           </div>
         )}
         {/* Поиск */}
@@ -177,7 +227,23 @@ export default function ProductsPage() {
                             ✓ Подтверждено
                           </span>,
                         ]
-                      : []),
+                      : product.is_rejected
+                        ? [
+                            <span
+                              key='rejected'
+                              className='bg-red-100 text-red-800 px-3 py-1 rounded-full font-medium'
+                            >
+                              ✗ Отклонено
+                            </span>,
+                          ]
+                        : [
+                            <span
+                              key='pending'
+                              className='bg-amber-100 text-amber-800 px-3 py-1 rounded-full font-medium'
+                            >
+                              ⚠ Не подтверждено
+                            </span>,
+                          ]),
                   ]}
                 />
 

@@ -5,7 +5,9 @@ import { supabase } from '@/lib/supabaseClient'
 import { Row } from '@/types/products'
 import { Header } from '@/components/Header'
 import { PaginationBar } from '@/components/PaginationBar'
+import { UserFilter } from '@/components/UserFilter'
 import Image from 'next/image'
+import { ADMIN_EMAILS } from '@/config/admin'
 
 export default function ApprovedImagesPage() {
   const [products, setProducts] = useState<Row[]>([])
@@ -15,6 +17,9 @@ export default function ApprovedImagesPage() {
   const [total, setTotal] = useState(0)
   const [currentUser, setCurrentUser] = useState<string | null>(null)
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc')
+  const [emails, setEmails] = useState<string[]>([])
+  const [selectedUser, setSelectedUser] = useState<string | null>(null)
+  const [hasNoEmailItems, setHasNoEmailItems] = useState(false)
   const pageSize = 50
 
   const fetchProducts = useCallback(async () => {
@@ -27,16 +32,46 @@ export default function ApprovedImagesPage() {
     }
     const userEmail = user.email ?? null
     setCurrentUser(userEmail)
+    
+    // Загрузка списка email'ов для админов
+    if (userEmail && ADMIN_EMAILS.includes(userEmail) && !emails.length) {
+      const { data: emailData } = await supabase
+        .from('products')
+        .select('image_confirmed_by_email')
+        .eq('image_status', 'approved')
+        .not('image_confirmed_by_email', 'is', null)
+      const uniqueEmails = [...new Set(emailData?.map(d => d.image_confirmed_by_email).filter(Boolean))] as string[]
+      setEmails(uniqueEmails.sort())
+      
+      // Проверка наличия элементов без почты
+      const { count } = await supabase
+        .from('products')
+        .select('id', { count: 'exact', head: true })
+        .eq('image_status', 'approved')
+        .is('image_confirmed_by_email', null)
+      setHasNoEmailItems((count ?? 0) > 0)
+    }
+    
     setLoading(true)
     setError(null)
     try {
-      const { data, error, count } = await supabase
+      let query = supabase
         .from('products')
         .select('*', { count: 'exact' })
         .eq('image_status', 'approved')
-        .eq('image_confirmed_by_email', user.email)
+        
+      if (selectedUser === '__no_email__') {
+        query = query.is('image_confirmed_by_email', null)
+      } else {
+        const filterEmail = selectedUser || user.email
+        query = query.eq('image_confirmed_by_email', filterEmail)
+      }
+      
+      query = query
         .order('updated_at', { ascending: sortOrder === 'asc' })
         .range((page - 1) * pageSize, page * pageSize - 1)
+      
+      const { data, error, count } = await query
 
       if (error) {
         setError(error.message)
@@ -47,7 +82,8 @@ export default function ApprovedImagesPage() {
     } catch {
       setError('Ошибка загрузки данных')
     }
-  }, [page, sortOrder]) // только реальные зависимости
+    setLoading(false)
+  }, [page, sortOrder, selectedUser]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     fetchProducts()
@@ -61,19 +97,28 @@ export default function ApprovedImagesPage() {
       />
 
       <div className='max-w-7xl mx-auto px-6 py-8 space-y-6'>
-        {/* Сортировка */}
-        <div className='bg-white rounded-lg border p-4'>
-          <label className='block text-sm font-medium text-gray-700 mb-2'>
-            Сортировка по дате обновления:
-          </label>
-          <select
-            value={sortOrder}
-            onChange={(e) => setSortOrder(e.target.value as 'desc' | 'asc')}
-            className='px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white'
-          >
-            <option value='desc'>Сначала свежие</option>
-            <option value='asc'>Сначала старые</option>
-          </select>
+        {/* Фильтры и сортировка */}
+        <div className='bg-white rounded-lg border p-4 grid grid-cols-1 md:grid-cols-2 gap-4'>
+          <UserFilter
+            emails={emails}
+            selected={selectedUser}
+            onChange={(email) => { setSelectedUser(email); setPage(1) }}
+            currentUser={currentUser}
+            hasNoEmailItems={hasNoEmailItems}
+          />
+          <div>
+            <label className='block text-sm font-medium text-gray-700 mb-2'>
+              Сортировка по дате обновления:
+            </label>
+            <select
+              value={sortOrder}
+              onChange={(e) => setSortOrder(e.target.value as 'desc' | 'asc')}
+              className='w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white'
+            >
+              <option value='desc'>Сначала свежие</option>
+              <option value='asc'>Сначала старые</option>
+            </select>
+          </div>
         </div>
 
         {/* Пагинация сверху */}

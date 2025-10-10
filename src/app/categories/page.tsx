@@ -9,6 +9,8 @@ import { PaginationBar } from '@/components/PaginationBar'
 import { CategoryHeader } from '@/components/CategoryHeader'
 import { CategorySearch } from '@/components/CategorySearch'
 import { UserStatsPanel } from '@/components/UserStatsPanel'
+import { UserFilter } from '@/components/UserFilter'
+import { ADMIN_EMAILS } from '@/config/admin'
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([])
@@ -21,6 +23,10 @@ export default function CategoriesPage() {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(
     null
   )
+  const [currentUser, setCurrentUser] = useState<string | null>(null)
+  const [emails, setEmails] = useState<string[]>([])
+  const [selectedUser, setSelectedUser] = useState<string | null>(null)
+  const [hasNoEmailItems, setHasNoEmailItems] = useState(false)
 
   const handleSelectCategory = (category: Category | null) => {
     setSelectedCategory(category)
@@ -30,7 +36,7 @@ export default function CategoriesPage() {
 
   useEffect(() => {
     fetchCategories()
-  }, [page, sortOrder, selectedCategory]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [page, sortOrder, selectedCategory, selectedUser]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function searchCategories(query: string): Promise<Category[]> {
     const { data } = await supabase
@@ -52,6 +58,30 @@ export default function CategoriesPage() {
       window.location.href = '/login'
       return
     }
+    
+    const userEmail = user.email ?? null
+    setCurrentUser(userEmail)
+    
+    // Загрузка списка email'ов для админов
+    if (userEmail && ADMIN_EMAILS.includes(userEmail) && !emails.length) {
+      const { data: emailData } = await supabase
+        .from('categories')
+        .select('confirmed_by_email')
+        .eq('description_confirmed', true)
+        .not('confirmed_by_email', 'is', null)
+      const uniqueEmails = [...new Set(emailData?.map(d => d.confirmed_by_email).filter(Boolean))] as string[]
+      setEmails(uniqueEmails.sort())
+      
+      // Проверка наличия элементов без почты
+      const { count } = await supabase
+        .from('categories')
+        .select('id', { count: 'exact', head: true })
+        .eq('description_added', true)
+        .is('confirmed_by_email', null)
+        .or('description_confirmed.eq.true,is_rejected.eq.true')
+      setHasNoEmailItems((count ?? 0) > 0)
+    }
+    
     setLoading(true)
     setError(null)
 
@@ -64,6 +94,17 @@ export default function CategoriesPage() {
       if (selectedCategory) {
         query = query.eq('id', selectedCategory.id)
       } else {
+        // Фильтр по пользователю
+        if (selectedUser) {
+          if (selectedUser === '__no_email__') {
+            query = query.is('confirmed_by_email', null)
+            // Показываем только подтвержденные или отклоненные
+            query = query.or('description_confirmed.eq.true,is_rejected.eq.true')
+          } else {
+            query = query.eq('confirmed_by_email', selectedUser)
+          }
+        }
+        
         query = query
           .order('updated_at', { ascending: sortOrder === 'asc' })
           .range((page - 1) * pageSize, page * pageSize - 1)
@@ -102,20 +143,29 @@ export default function CategoriesPage() {
       />
 
       <div className='max-w-7xl mx-auto px-4 py-6 space-y-4'>
-        {/* Сортировка */}
+        {/* Фильтры и сортировка */}
         {!selectedCategory && (
-          <div className='bg-white rounded-lg border p-2'>
-            <label className='block text-sm font-medium text-gray-700'>
-              Сортировка по дате обновления:
-            </label>
-            <select
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value as 'desc' | 'asc')}
-              className='px-1 py-1 border rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white'
-            >
-              <option value='desc'>Сначала свежие</option>
-              <option value='asc'>Сначала старые</option>
-            </select>
+          <div className='bg-white rounded-lg border p-4 grid grid-cols-1 md:grid-cols-2 gap-4'>
+            <UserFilter
+              emails={emails}
+              selected={selectedUser}
+              onChange={(email) => { setSelectedUser(email); setPage(1) }}
+              currentUser={currentUser}
+              hasNoEmailItems={hasNoEmailItems}
+            />
+            <div>
+              <label className='block text-sm font-medium text-gray-700 mb-2'>
+                Сортировка по дате обновления:
+              </label>
+              <select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value as 'desc' | 'asc')}
+                className='w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white'
+              >
+                <option value='desc'>Сначала свежие</option>
+                <option value='asc'>Сначала старые</option>
+              </select>
+            </div>
           </div>
         )}
 
@@ -179,7 +229,23 @@ export default function CategoriesPage() {
                             ✓ Подтверждено
                           </span>,
                         ]
-                      : []),
+                        : category.is_rejected
+                        ? [
+                            <span
+                              key='rejected'
+                              className='bg-red-100 text-red-800 px-3 py-1 rounded-full font-medium'
+                            >
+                              ✗ Отклонено
+                            </span>,
+                          ]
+                        : [
+                            <span
+                              key='pending'
+                              className='bg-amber-100 text-amber-800 px-3 py-1 rounded-full font-medium'
+                            >
+                              ⚠ Не подтверждено
+                            </span>,
+                          ]),
                   ]}
                 />
 
