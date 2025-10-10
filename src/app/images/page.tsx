@@ -9,6 +9,8 @@ import { ChangeEvent } from 'react'
 import Image from 'next/image'
 import { UserStatsPanel } from '@/components/UserStatsPanel'
 import { UserFilter } from '@/components/UserFilter'
+import { SortSelect } from '@/components/SortSelect'
+import { LoadingSpinner, ErrorMessage, EmptyState } from '@/components/UIStates'
 import { ADMIN_EMAILS } from '@/config/admin'
 
 export default function ImagesPage() {
@@ -36,10 +38,10 @@ export default function ImagesPage() {
       window.location.href = '/login'
       return
     }
-    
+
     const userEmail = user.email ?? null
     setCurrentUser(userEmail)
-    
+
     // Загрузка списка email'ов для админов
     if (userEmail && ADMIN_EMAILS.includes(userEmail) && !emails.length) {
       const { data: emailData } = await supabase
@@ -47,9 +49,13 @@ export default function ImagesPage() {
         .select('image_confirmed_by_email')
         .in('image_status', ['approved', 'rejected', 'replace_later'])
         .not('image_confirmed_by_email', 'is', null)
-      const uniqueEmails = [...new Set(emailData?.map(d => d.image_confirmed_by_email).filter(Boolean))] as string[]
+      const uniqueEmails = [
+        ...new Set(
+          emailData?.map((d) => d.image_confirmed_by_email).filter(Boolean)
+        ),
+      ] as string[]
       setEmails(uniqueEmails.sort())
-      
+
       // Проверка наличия элементов без почты
       const { count } = await supabase
         .from('products')
@@ -58,7 +64,7 @@ export default function ImagesPage() {
         .is('image_confirmed_by_email', null)
       setHasNoEmailItems((count ?? 0) > 0)
     }
-    
+
     setLoading(true)
     setError(null)
 
@@ -73,7 +79,11 @@ export default function ImagesPage() {
         if (selectedUser === '__no_email__') {
           query = query.is('image_confirmed_by_email', null)
           // Показываем только подтвержденные (не pending)
-          query = query.in('image_status', ['approved', 'rejected', 'replace_later'])
+          query = query.in('image_status', [
+            'approved',
+            'rejected',
+            'replace_later',
+          ])
         } else {
           query = query.eq('image_confirmed_by_email', selectedUser)
         }
@@ -143,7 +153,10 @@ export default function ImagesPage() {
             <UserFilter
               emails={emails}
               selected={selectedUser}
-              onChange={(email) => { setSelectedUser(email); setPage(1) }}
+              onChange={(email) => {
+                setSelectedUser(email)
+                setPage(1)
+              }}
               currentUser={currentUser}
               hasNoEmailItems={hasNoEmailItems}
             />
@@ -166,19 +179,11 @@ export default function ImagesPage() {
                 <option value='rejected'>Отклонено</option>
               </select>
             </div>
-            <div>
-              <label className='block text-sm font-medium text-gray-700 mb-2'>
-                Сортировка по дате:
-              </label>
-              <select
-                value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value as 'desc' | 'asc')}
-                className='w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white'
-              >
-                <option value='desc'>Сначала свежие</option>
-                <option value='asc'>Сначала старые</option>
-              </select>
-            </div>
+            <SortSelect
+              value={sortOrder}
+              onChange={setSortOrder}
+              label='Сортировка по дате:'
+            />
           </div>
         </div>
         {/* Статистика */}
@@ -194,18 +199,8 @@ export default function ImagesPage() {
           />
         )}
 
-        {loading && (
-          <div className='flex items-center justify-center py-12'>
-            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600'></div>
-            <p className='text-slate-600 ml-3'>Загрузка...</p>
-          </div>
-        )}
-
-        {error && (
-          <div className='bg-red-50 border border-red-200 rounded-lg p-4'>
-            <p className='text-red-800'>Ошибка: {error}</p>
-          </div>
-        )}
+        {loading && <LoadingSpinner />}
+        {error && <ErrorMessage error={error} />}
 
         {/* Список изображений */}
         {!loading && !error && products.length > 0 && (
@@ -321,9 +316,7 @@ export default function ImagesPage() {
         )}
 
         {!loading && !error && products.length === 0 && (
-          <div className='bg-blue-50 border border-blue-200 rounded-lg p-6 text-center'>
-            <p className='text-blue-800'>Нет изображений для отображения.</p>
-          </div>
+          <EmptyState message='Нет изображений для отображения.' />
         )}
 
         {/* Пагинация снизу */}

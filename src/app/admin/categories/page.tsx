@@ -8,6 +8,7 @@ import { Category } from '@/types/categories'
 import { Header } from '@/components/Header'
 import { RichTextEditorModal } from '@/components/RichTextEditorModal'
 import { CategoryHeader } from '@/components/CategoryHeader'
+import { LoadingSpinner, ErrorMessage } from '@/components/UIStates'
 
 export default function AdminCategoriesPage() {
   const [currentCategory, setCurrentCategory] = useState<Category | null>(null)
@@ -184,23 +185,8 @@ export default function AdminCategoriesPage() {
           </div>
         </div>
 
-        {loading && (
-          <div className='flex items-center justify-center py-12'>
-            <div className='flex items-center space-x-3'>
-              <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600'></div>
-              <p className='text-slate-600 text-lg'>Загрузка...</p>
-            </div>
-          </div>
-        )}
-
-        {error && (
-          <div
-            className='bg-red-50 border border-red-200 rounded-lg p-4'
-            role='alert'
-          >
-            <p className='text-red-800 font-medium'>Ошибка: {error}</p>
-          </div>
-        )}
+        {loading && <LoadingSpinner />}
+        {error && <ErrorMessage error={error} />}
 
         {!loading && !error && currentCategory && (
           <div className='space-y-8'>

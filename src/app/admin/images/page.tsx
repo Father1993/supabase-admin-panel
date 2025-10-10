@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { Row } from '@/types/products'
 import { Header } from '@/components/Header'
+import { LoadingSpinner, ErrorMessage } from '@/components/UIStates'
 import Image from 'next/image'
 
 export default function AdminImagesPage() {
@@ -119,18 +120,8 @@ export default function AdminImagesPage() {
           </div>
         </div>
 
-        {loading && (
-          <div className='flex items-center justify-center py-12'>
-            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600'></div>
-            <p className='text-slate-600 ml-3'>Загрузка...</p>
-          </div>
-        )}
-
-        {error && (
-          <div className='bg-red-50 border border-red-200 rounded-lg p-4'>
-            <p className='text-red-800'>Ошибка: {error}</p>
-          </div>
-        )}
+        {loading && <LoadingSpinner />}
+        {error && <ErrorMessage error={error} />}
 
         {!loading && !error && currentProduct && (
           <div className='bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden'>

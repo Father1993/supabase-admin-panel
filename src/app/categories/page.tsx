@@ -10,6 +10,8 @@ import { CategoryHeader } from '@/components/CategoryHeader'
 import { CategorySearch } from '@/components/CategorySearch'
 import { UserStatsPanel } from '@/components/UserStatsPanel'
 import { UserFilter } from '@/components/UserFilter'
+import { SortSelect } from '@/components/SortSelect'
+import { LoadingSpinner, ErrorMessage } from '@/components/UIStates'
 import { ADMIN_EMAILS } from '@/config/admin'
 
 export default function CategoriesPage() {
@@ -58,10 +60,10 @@ export default function CategoriesPage() {
       window.location.href = '/login'
       return
     }
-    
+
     const userEmail = user.email ?? null
     setCurrentUser(userEmail)
-    
+
     // Загрузка списка email'ов для админов
     if (userEmail && ADMIN_EMAILS.includes(userEmail) && !emails.length) {
       const { data: emailData } = await supabase
@@ -69,9 +71,11 @@ export default function CategoriesPage() {
         .select('confirmed_by_email')
         .eq('description_confirmed', true)
         .not('confirmed_by_email', 'is', null)
-      const uniqueEmails = [...new Set(emailData?.map(d => d.confirmed_by_email).filter(Boolean))] as string[]
+      const uniqueEmails = [
+        ...new Set(emailData?.map((d) => d.confirmed_by_email).filter(Boolean)),
+      ] as string[]
       setEmails(uniqueEmails.sort())
-      
+
       // Проверка наличия элементов без почты
       const { count } = await supabase
         .from('categories')
@@ -81,7 +85,7 @@ export default function CategoriesPage() {
         .or('description_confirmed.eq.true,is_rejected.eq.true')
       setHasNoEmailItems((count ?? 0) > 0)
     }
-    
+
     setLoading(true)
     setError(null)
 
@@ -99,12 +103,14 @@ export default function CategoriesPage() {
           if (selectedUser === '__no_email__') {
             query = query.is('confirmed_by_email', null)
             // Показываем только подтвержденные или отклоненные
-            query = query.or('description_confirmed.eq.true,is_rejected.eq.true')
+            query = query.or(
+              'description_confirmed.eq.true,is_rejected.eq.true'
+            )
           } else {
             query = query.eq('confirmed_by_email', selectedUser)
           }
         }
-        
+
         query = query
           .order('updated_at', { ascending: sortOrder === 'asc' })
           .range((page - 1) * pageSize, page * pageSize - 1)
@@ -149,23 +155,14 @@ export default function CategoriesPage() {
             <UserFilter
               emails={emails}
               selected={selectedUser}
-              onChange={(email) => { setSelectedUser(email); setPage(1) }}
+              onChange={(email) => {
+                setSelectedUser(email)
+                setPage(1)
+              }}
               currentUser={currentUser}
               hasNoEmailItems={hasNoEmailItems}
             />
-            <div>
-              <label className='block text-sm font-medium text-gray-700 mb-2'>
-                Сортировка по дате обновления:
-              </label>
-              <select
-                value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value as 'desc' | 'asc')}
-                className='w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white'
-              >
-                <option value='desc'>Сначала свежие</option>
-                <option value='asc'>Сначала старые</option>
-              </select>
-            </div>
+            <SortSelect value={sortOrder} onChange={setSortOrder} />
           </div>
         )}
 
@@ -195,18 +192,8 @@ export default function CategoriesPage() {
           />
         )}
 
-        {loading && (
-          <div className='flex items-center justify-center py-12'>
-            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600'></div>
-            <p className='text-slate-600 ml-3'>Загрузка...</p>
-          </div>
-        )}
-
-        {error && (
-          <div className='bg-red-50 border border-red-200 rounded-lg p-4'>
-            <p className='text-red-800'>Ошибка: {error}</p>
-          </div>
-        )}
+        {loading && <LoadingSpinner />}
+        {error && <ErrorMessage error={error} />}
 
         {/* Список категорий */}
         {!loading && !error && (
@@ -229,7 +216,7 @@ export default function CategoriesPage() {
                             ✓ Подтверждено
                           </span>,
                         ]
-                        : category.is_rejected
+                      : category.is_rejected
                         ? [
                             <span
                               key='rejected'
