@@ -1,38 +1,47 @@
-## Product Management Admin Panel
+## Product & Category Management Admin Panel
 
-A comprehensive Next.js admin panel for managing product descriptions with image support, content editing, and approval workflows. Built for teams that need to review, edit, and approve product content before publication.
+A comprehensive Next.js admin panel for managing products, categories, and images with AI-generated content, rich text editing, and approval workflows. Built for teams that need to review, edit, and approve content before publication.
 
 ### Core Features
 
 **Product Management**
 - View all products with AI-generated descriptions and images
-- Pagination support (50 products per page) with sorting options
+- Pagination support (50 items per page) with sorting options
 - Real-time product search with autocomplete (by name, ID, article, 1C code)
 - Product filtering and single-item view mode
 - Real-time product images loaded directly from database
 - Visual status indicators for PIM integration and approval status
 - Direct links to external PIM system for product verification
 
+**Category Management**
+- View all product categories with AI-generated descriptions
+- Category approval workflow with editing capabilities
+- Real-time category search with autocomplete (by name, ID, level)
+- Category hierarchy display with level indicators
+- Product count tracking per category
+- Random category assignment for review
+- Progress tracking showing remaining categories to confirm
+
 **Content Editing**
 - Rich text editor with toolbar: Bold, Italic, Underline, Headers, Lists, Links
 - Live preview with HTML sanitization for security
-- Edit both short and full product descriptions
+- Edit product descriptions (short and full) and category descriptions
 - Auto-save functionality with error handling
 - Content validation and sanitization before database storage
 
 **Approval Workflow**
-- Random product assignment system to prevent conflicts
+- Random assignment system for products and categories to prevent conflicts
 - 5-minute locking mechanism to prevent simultaneous editing
 - One-click approval and rejection with user email tracking
-- Product rejection system with `is_rejected` flag for quality control
+- Rejection system with `is_rejected` flag for quality control
 - Automatic cleanup of expired locks
-- Progress tracking showing remaining products to confirm
+- Progress tracking showing remaining items to confirm
 
 **User Management**
 - Supabase authentication (email/password)
 - Role-based access control
-- Personal dashboard showing user's confirmed products
-- Admin statistics for team performance tracking
+- Personal dashboard showing user's confirmed products, images, and categories
+- Admin statistics panel for team performance tracking across all entity types
 
 **Image Management**
 - Three-status image approval system: Approved, Rejected, Requires Replacement
@@ -52,6 +61,13 @@ A comprehensive Next.js admin panel for managing product descriptions with image
 - Real-time progress tracking
 - Product rejection system for quality control
 
+**Admin Categories (`/admin/categories`)**
+- Random category assignment for review
+- Category description editing with rich text editor
+- Approval and rejection workflow for categories
+- Progress tracking for pending categories
+- Category hierarchy and metadata display
+
 **Admin Images (`/admin/images`)**
 - Image quality control workflow
 - Three-button approval system: Approved, Rejected, Requires Replacement
@@ -65,6 +81,16 @@ A comprehensive Next.js admin panel for managing product descriptions with image
 - Product filtering and single-item view mode
 - Pagination and sorting controls (hidden when filtering)
 - Status indicators and metadata display
+- Admin statistics panel for team performance tracking
+
+**Categories Page (`/categories`)**
+- Browse all product categories with descriptions
+- Real-time search with autocomplete dropdown (by name, ID)
+- Category filtering and single-item view mode
+- Pagination and sorting controls
+- Category hierarchy display with level indicators
+- Product count per category
+- Admin statistics panel for team performance tracking
 
 **Images Page (`/images`)**
 - Browse all product images with status indicators
@@ -72,16 +98,17 @@ A comprehensive Next.js admin panel for managing product descriptions with image
 - Visual status badges for quick identification
 - Pagination and sorting controls
 - Image quality verification tools
+- Admin statistics panel for team performance tracking
 
 **Approved Products (`/approved-products`)**
 - Personal dashboard of confirmed products
-- Admin statistics (for authorized users)
+- Admin statistics panel (for authorized users)
 - Performance metrics and user activity
-- Export and reporting capabilities
+- Sorting and pagination controls
 
 **Approved Images (`/approved-images`)**
 - Personal dashboard of images confirmed by user
-- Admin statistics showing team performance
+- Admin statistics panel showing team performance
 - Confirmation counts by user email
 - Sorting and pagination controls
 
@@ -110,6 +137,9 @@ A comprehensive Next.js admin panel for managing product descriptions with image
 - `ProductHeader` - Unified product card headers with metadata display
 - `ProductSearch` - Real-time search with autocomplete dropdown
 - `ProductImage` - Optimized image display with fallback handling
+- `CategoryHeader` - Unified category card headers with hierarchy and metadata
+- `CategorySearch` - Real-time category search with autocomplete dropdown
+- `UserStatsPanel` - Universal statistics panel for admins (products, images, categories)
 - `RejectButton` - Product rejection functionality
 - `PaginationBar` - Pagination controls with progress indicators
 - `RichTextEditorModal` - Content editing with HTML sanitization
@@ -123,7 +153,9 @@ A comprehensive Next.js admin panel for managing product descriptions with image
 
 ### Database Schema
 
-The application works with a `products` table containing:
+The application works with two main tables:
+
+**Products Table**
 
 **Core Product Data**
 - `id`, `uid`, `product_name`, `article`, `code_1c`
@@ -149,6 +181,25 @@ The application works with a `products` table containing:
 - `created_at`, `updated_at` (timestamps)
 - `push_to_pim` (integration status)
 - `link_pim` (external system links)
+
+**Categories Table**
+
+**Core Category Data**
+- `id`, `parent_id`, `header` (category name)
+- `sync_uid` (external system sync ID)
+- `level` (hierarchy level)
+- `product_count`, `product_count_additional` (product counts)
+- `description` (HTML content)
+
+**Workflow Management**
+- `description_added` (boolean)
+- `description_confirmed` (boolean)
+- `confirmed_by_email` (text)
+- `is_rejected` (boolean) - Category rejection flag for quality control
+
+**Audit Trail**
+- `created_at`, `updated_at` (timestamps)
+- `push_to_pim` (integration status)
 
 ### Getting Started
 
@@ -186,7 +237,18 @@ ALTER TABLE public.products
   ADD COLUMN IF NOT EXISTS image_rejected boolean NOT NULL DEFAULT false,
   ADD COLUMN IF NOT EXISTS image_confirmed_by_email text;
 
--- Create update trigger
+-- Add required columns to categories table
+ALTER TABLE public.categories
+  ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now(),
+  ADD COLUMN IF NOT EXISTS updated_at timestamptz NOT NULL DEFAULT now(),
+  ADD COLUMN IF NOT EXISTS description_added boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS description text,
+  ADD COLUMN IF NOT EXISTS description_confirmed boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS confirmed_by_email text,
+  ADD COLUMN IF NOT EXISTS is_rejected boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS push_to_pim boolean NOT NULL DEFAULT false;
+
+-- Create update trigger for products
 CREATE OR REPLACE FUNCTION public.set_updated_at()
 RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
@@ -197,6 +259,11 @@ $$;
 
 CREATE TRIGGER trg_set_updated_at
   BEFORE UPDATE ON public.products
+  FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+
+-- Create update trigger for categories
+CREATE TRIGGER trg_set_updated_at_categories
+  BEFORE UPDATE ON public.categories
   FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
 ```
 
@@ -209,8 +276,13 @@ npm run dev
 - Open `http://localhost:3000`
 - Login at `/login`
 - Navigate to `/admin` for product review
-- Use `/products` to browse all items
-- Check `/approved-products` for personal dashboard
+- Navigate to `/admin/categories` for category review
+- Navigate to `/admin/images` for image quality control
+- Use `/products` to browse all products
+- Use `/categories` to browse all categories
+- Use `/images` to browse all images
+- Check `/approved-products` for personal product dashboard
+- Check `/approved-images` for personal images dashboard
 
 ### Docker Deployment
 
@@ -228,17 +300,18 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_key
 ### User Roles & Permissions
 
 **Standard Users**
-- Review and edit product descriptions
+- Review and edit product and category descriptions
 - Approve or reject content with email tracking
-- Search and filter products with real-time autocomplete
-- View personal confirmation history
+- Manage image quality control with three-status system
+- Search and filter products and categories with real-time autocomplete
+- View personal confirmation history for products, images, and categories
 - Access product images and metadata
 
 **Admin Users**
 - All standard user permissions
-- Access to team statistics dashboard
-- View confirmation counts by user
-- Monitor team performance metrics
+- Access to unified statistics panel across all entity types
+- View confirmation counts by user for products, images, and categories
+- Monitor team performance metrics with detailed breakdowns
 
 ### Security Features
 

@@ -6,6 +6,7 @@ import { Row } from '@/types/products'
 import { Header } from '@/components/Header'
 import { PaginationBar } from '@/components/PaginationBar'
 import { ADMIN_EMAILS } from '@/config/admin'
+import Image from 'next/image'
 
 export default function ApprovedImagesPage() {
   const [products, setProducts] = useState<Row[]>([])
@@ -97,48 +98,6 @@ export default function ApprovedImagesPage() {
       />
 
       <div className='max-w-7xl mx-auto px-6 py-8 space-y-6'>
-        {/* Статистика для специального пользователя */}
-        {isSpecialUser && userStats.length > 0 && (
-          <div className='bg-indigo-50 border border-indigo-200 rounded-lg p-5 shadow-sm'>
-            <div className='flex justify-between items-center mb-3'>
-              <h3 className='text-lg font-bold text-indigo-700'>
-                Статистика подтверждений изображений
-              </h3>
-              <div className='bg-indigo-100 text-indigo-600 text-xs rounded-full px-3 py-1'>
-                Доступно только администраторам
-              </div>
-            </div>
-            <div className='overflow-hidden rounded-lg border border-indigo-200 bg-white'>
-              <table className='min-w-full divide-y divide-indigo-200'>
-                <thead className='bg-indigo-50'>
-                  <tr>
-                    <th className='px-4 py-3 text-left text-xs font-medium text-indigo-800 uppercase tracking-wider'>
-                      Email сотрудника
-                    </th>
-                    <th className='px-4 py-3 text-left text-xs font-medium text-indigo-800 uppercase tracking-wider'>
-                      Количество подтверждений
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className='bg-white divide-y divide-indigo-100'>
-                  {userStats.map((stat, idx) => (
-                    <tr
-                      key={idx}
-                      className={idx % 2 === 0 ? 'bg-white' : 'bg-indigo-50'}
-                    >
-                      <td className='px-4 py-2 whitespace-nowrap text-sm text-gray-900'>
-                        {stat.email}
-                      </td>
-                      <td className='px-4 py-2 whitespace-nowrap text-sm font-medium text-indigo-700'>
-                        {stat.count}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
 
         {/* Сортировка */}
         <div className='bg-white rounded-lg border p-4'>
@@ -197,8 +156,8 @@ export default function ApprovedImagesPage() {
                 {/* Изображение */}
                 <div className='aspect-square relative bg-gray-100'>
                   {product.image_optimized_url ? (
-                    // TODO Поменять на Image
-                    <img
+                    <Image
+                      fill
                       src={product.image_optimized_url}
                       alt={product.product_name || 'Изображение товара'}
                       className='w-full h-full object-contain'

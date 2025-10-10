@@ -8,6 +8,7 @@ import { Header } from '@/components/Header'
 import { PaginationBar } from '@/components/PaginationBar'
 import { CategoryHeader } from '@/components/CategoryHeader'
 import { CategorySearch } from '@/components/CategorySearch'
+import { UserStatsPanel } from '@/components/UserStatsPanel'
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([])
@@ -129,6 +130,9 @@ export default function CategoriesPage() {
             searchCategories={searchCategories}
           />
         </div>
+        
+        {/* Статистика */}
+        <UserStatsPanel type="categories" />
 
         {/* Пагинация сверху */}
         {!loading && !selectedCategory && (

@@ -153,6 +153,7 @@ export default function AdminCategoriesPage() {
       .from('categories')
       .update({
         is_rejected: true,
+        confirmed_by_email: currentUserEmail,
       })
       .eq('id', category.id)
     if (error) {

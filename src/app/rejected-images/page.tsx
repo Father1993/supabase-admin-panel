@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabaseClient'
 import { Row } from '@/types/products'
 import { Header } from '@/components/Header'
 import { PaginationBar } from '@/components/PaginationBar'
+import Image from 'next/image'
 export default function RejectedImagesPage() {
   const [products, setProducts] = useState<Row[]>([])
   const [loading, setLoading] = useState(true)
@@ -132,8 +133,8 @@ export default function RejectedImagesPage() {
                 {/* Изображение */}
                 <div className='aspect-square relative bg-gray-100'>
                   {product.image_optimized_url ? (
-                    // TODO Поменять на Image
-                    <img
+                    <Image
+                      fill
                       src={product.image_optimized_url}
                       alt={product.product_name || 'Изображение товара'}
                       className='w-full h-full object-contain'

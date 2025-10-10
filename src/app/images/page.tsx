@@ -6,6 +6,8 @@ import { Row } from '@/types/products'
 import { Header } from '@/components/Header'
 import { PaginationBar } from '@/components/PaginationBar'
 import { ChangeEvent } from 'react'
+import Image from 'next/image'
+import { UserStatsPanel } from '@/components/UserStatsPanel'
 
 export default function ImagesPage() {
   const [products, setProducts] = useState<Row[]>([])
@@ -124,7 +126,8 @@ export default function ImagesPage() {
             </div>
           </div>
         </div>
-
+        {/* Статистика */}
+        <UserStatsPanel type="images" />
         {/* Пагинация сверху */}
         {!loading && (
           <PaginationBar
@@ -160,8 +163,8 @@ export default function ImagesPage() {
                 {/* Изображение */}
                 <div className='aspect-square relative bg-gray-100'>
                   {product.image_optimized_url ? (
-                    // TODO Поменять на Image
-                    <img
+                    <Image
+                      fill
                       src={product.image_optimized_url}
                       alt={product.product_name || 'Изображение товара'}
                       className='w-full h-full object-contain'

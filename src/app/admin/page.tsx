@@ -173,6 +173,7 @@ export default function AdminPage() {
       .from('products')
       .update({
         is_rejected: true,
+        confirmed_by_email: currentUserEmail,
         locked_until: null, // Освобождаем блокировку
       })
       .eq('id', row.id)
