@@ -127,7 +127,7 @@ export default function ImagesPage() {
           </div>
         </div>
         {/* Статистика */}
-        <UserStatsPanel type="images" />
+        <UserStatsPanel type='images' />
         {/* Пагинация сверху */}
         {!loading && (
           <PaginationBar

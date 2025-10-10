@@ -5,7 +5,6 @@ import { supabase } from '@/lib/supabaseClient'
 import { Row } from '@/types/products'
 import { Header } from '@/components/Header'
 import { PaginationBar } from '@/components/PaginationBar'
-import { ADMIN_EMAILS } from '@/config/admin'
 import Image from 'next/image'
 
 export default function ApprovedImagesPage() {
@@ -16,10 +15,6 @@ export default function ApprovedImagesPage() {
   const [total, setTotal] = useState(0)
   const [currentUser, setCurrentUser] = useState<string | null>(null)
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc')
-  const [userStats, setUserStats] = useState<
-    { email: string; count: number }[]
-  >([])
-  const [isSpecialUser, setIsSpecialUser] = useState(false)
   const pageSize = 50
 
   const fetchProducts = useCallback(async () => {
@@ -34,10 +29,6 @@ export default function ApprovedImagesPage() {
     setCurrentUser(userEmail)
     setLoading(true)
     setError(null)
-
-    const isSpecial = userEmail !== null && ADMIN_EMAILS.includes(userEmail)
-    setIsSpecialUser(isSpecial)
-
     try {
       const { data, error, count } = await supabase
         .from('products')
@@ -56,34 +47,6 @@ export default function ApprovedImagesPage() {
     } catch {
       setError('Ошибка загрузки данных')
     }
-
-    if (isSpecial) {
-      try {
-        const { data: allConfirmedData, error: statsError } = await supabase
-          .from('products')
-          .select('image_confirmed_by_email')
-          .eq('image_status', 'approved')
-          .not('image_confirmed_by_email', 'is', null)
-
-        if (!statsError && allConfirmedData) {
-          const stats: Record<string, number> = {}
-          allConfirmedData.forEach((item) => {
-            const email = item.image_confirmed_by_email as string
-            stats[email] = (stats[email] || 0) + 1
-          })
-
-          const statsArray = Object.entries(stats)
-            .map(([email, count]) => ({ email, count }))
-            .sort((a, b) => b.count - a.count)
-
-          setUserStats(statsArray)
-        }
-      } catch (err) {
-        console.error('Ошибка при загрузке статистики:', err)
-      }
-    }
-
-    setLoading(false)
   }, [page, sortOrder]) // только реальные зависимости
 
   useEffect(() => {
@@ -98,7 +61,6 @@ export default function ApprovedImagesPage() {
       />
 
       <div className='max-w-7xl mx-auto px-6 py-8 space-y-6'>
-
         {/* Сортировка */}
         <div className='bg-white rounded-lg border p-4'>
           <label className='block text-sm font-medium text-gray-700 mb-2'>

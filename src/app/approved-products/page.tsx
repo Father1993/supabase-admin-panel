@@ -8,7 +8,6 @@ import { Header } from '@/components/Header'
 import { PaginationBar } from '@/components/PaginationBar'
 import { ProductImage } from '@/components/ProductImage'
 import { ProductHeader } from '@/components/ProductHeader'
-import { ADMIN_EMAILS } from '@/config/admin'
 
 export default function ApprovedProductsPage() {
   const [products, setProducts] = useState<Row[]>([])
@@ -18,10 +17,6 @@ export default function ApprovedProductsPage() {
   const [total, setTotal] = useState(0)
   const [currentUser, setCurrentUser] = useState<string | null>(null)
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc')
-  const [userStats, setUserStats] = useState<
-    { email: string; count: number }[]
-  >([])
-  const [isSpecialUser, setIsSpecialUser] = useState(false)
   const pageSize = 50
 
   useEffect(() => {
@@ -40,10 +35,7 @@ export default function ApprovedProductsPage() {
     setCurrentUser(userEmail)
     setLoading(true)
     setError(null)
-
     // Проверка, имеет ли пользователь доступ к статистике
-    const isSpecial = userEmail !== null && ADMIN_EMAILS.includes(userEmail)
-    setIsSpecialUser(isSpecial)
 
     try {
       const { data, error, count } = await supabase
@@ -63,43 +55,6 @@ export default function ApprovedProductsPage() {
     } catch {
       setError('Ошибка загрузки данных')
     }
-
-    // Загрузка статистики для специального пользователя
-    if (isSpecial) {
-      try {
-        // Получаем все подтвержденные записи
-        const { data: allConfirmedData, error: statsError } = await supabase
-          .from('products')
-          .select('confirmed_by_email')
-          .eq('description_confirmed', true)
-          .not('confirmed_by_email', 'is', null)
-
-        if (!statsError && allConfirmedData) {
-          // Обрабатываем данные на клиенте
-          const stats: Record<string, number> = {}
-
-          // Подсчитываем количество для каждого email
-          allConfirmedData.forEach((item) => {
-            const email = item.confirmed_by_email as string
-            stats[email] = (stats[email] || 0) + 1
-          })
-
-          // Преобразуем в массив для сортировки
-          const statsArray = Object.entries(stats).map(([email, count]) => ({
-            email,
-            count,
-          }))
-
-          // Сортируем по убыванию количества
-          statsArray.sort((a, b) => b.count - a.count)
-
-          setUserStats(statsArray)
-        }
-      } catch (err) {
-        console.error('Ошибка при загрузке статистики:', err)
-      }
-    }
-
     setLoading(false)
   }
 
@@ -110,7 +65,7 @@ export default function ApprovedProductsPage() {
         subtitle={`Товары, подтвержденные вами (${currentUser || ''})`}
       />
 
-      <div className='max-w-7xl mx-auto px-6 py-8 space-y-6'>        
+      <div className='max-w-7xl mx-auto px-6 py-8 space-y-6'>
         {/* Сортировка */}
         <div className='bg-white rounded-lg border p-4'>
           <label className='block text-sm font-medium text-gray-700 mb-2'>

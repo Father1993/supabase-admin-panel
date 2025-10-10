@@ -14,7 +14,10 @@ export default function AdminImagesPage() {
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null)
   const [remainingToConfirm, setRemainingToConfirm] = useState(0)
 
-  const [imageSize, setImageSize] = useState<{ w: number; h: number }>({w: 750, h: 1000})
+  const [imageSize, setImageSize] = useState<{ w: number; h: number }>({
+    w: 750,
+    h: 1000,
+  })
 
   useEffect(() => {
     fetchProducts()
@@ -172,7 +175,11 @@ export default function AdminImagesPage() {
                       height={imageSize.h}
                       src={currentProduct.image_optimized_url}
                       alt={currentProduct.product_name || 'Изображение товара'}
-                      style={{ width: 'auto', height: 'auto', maxWidth: 'none' }}
+                      style={{
+                        width: 'auto',
+                        height: 'auto',
+                        maxWidth: 'none',
+                      }}
                       onLoad={(e) => {
                         const img = e.currentTarget
                         setImageSize({
@@ -185,20 +192,68 @@ export default function AdminImagesPage() {
                   {/* Сетка: отступы 100px и 150px со всех сторон */}
                   <div className='absolute inset-0 pointer-events-none opacity-40'>
                     {/* Вертикальные линии слева: 100px и 150px */}
-                    <div className='absolute top-0 bottom-0 left-[100px] w-px' style={{backgroundImage: 'repeating-linear-gradient(to bottom, #ffb86a 0, #ffb86a 10px, transparent 10px, transparent 15px)'}} />
-                    <div className='absolute top-0 bottom-0 left-[150px] w-px' style={{backgroundImage: 'repeating-linear-gradient(to bottom, #ffb86a 0, #ffb86a 10px, transparent 10px, transparent 15px)'}} />
-                    
+                    <div
+                      className='absolute top-0 bottom-0 left-[100px] w-px'
+                      style={{
+                        backgroundImage:
+                          'repeating-linear-gradient(to bottom, #ffb86a 0, #ffb86a 10px, transparent 10px, transparent 15px)',
+                      }}
+                    />
+                    <div
+                      className='absolute top-0 bottom-0 left-[150px] w-px'
+                      style={{
+                        backgroundImage:
+                          'repeating-linear-gradient(to bottom, #ffb86a 0, #ffb86a 10px, transparent 10px, transparent 15px)',
+                      }}
+                    />
+
                     {/* Вертикальные линии справа: 100px и 150px */}
-                    <div className='absolute top-0 bottom-0 right-[100px] w-px' style={{backgroundImage: 'repeating-linear-gradient(to bottom, #ffb86a 0, #ffb86a 10px, transparent 10px, transparent 15px)'}} />
-                    <div className='absolute top-0 bottom-0 right-[150px] w-px' style={{backgroundImage: 'repeating-linear-gradient(to bottom, #ffb86a 0, #ffb86a 10px, transparent 10px, transparent 15px)'}} />
-                    
+                    <div
+                      className='absolute top-0 bottom-0 right-[100px] w-px'
+                      style={{
+                        backgroundImage:
+                          'repeating-linear-gradient(to bottom, #ffb86a 0, #ffb86a 10px, transparent 10px, transparent 15px)',
+                      }}
+                    />
+                    <div
+                      className='absolute top-0 bottom-0 right-[150px] w-px'
+                      style={{
+                        backgroundImage:
+                          'repeating-linear-gradient(to bottom, #ffb86a 0, #ffb86a 10px, transparent 10px, transparent 15px)',
+                      }}
+                    />
+
                     {/* Горизонтальные линии сверху: 100px и 150px */}
-                    <div className='absolute left-0 right-0 top-[100px] h-px' style={{backgroundImage: 'repeating-linear-gradient(to right, #ffb86a 0, #ffb86a 10px, transparent 10px, transparent 15px)'}} />
-                    <div className='absolute left-0 right-0 top-[150px] h-px' style={{backgroundImage: 'repeating-linear-gradient(to right, #ffb86a 0, #ffb86a 10px, transparent 10px, transparent 15px)'}} />
-                    
+                    <div
+                      className='absolute left-0 right-0 top-[100px] h-px'
+                      style={{
+                        backgroundImage:
+                          'repeating-linear-gradient(to right, #ffb86a 0, #ffb86a 10px, transparent 10px, transparent 15px)',
+                      }}
+                    />
+                    <div
+                      className='absolute left-0 right-0 top-[150px] h-px'
+                      style={{
+                        backgroundImage:
+                          'repeating-linear-gradient(to right, #ffb86a 0, #ffb86a 10px, transparent 10px, transparent 15px)',
+                      }}
+                    />
+
                     {/* Горизонтальные линии снизу: 100px и 150px */}
-                    <div className='absolute left-0 right-0 bottom-[100px] h-px' style={{backgroundImage: 'repeating-linear-gradient(to right, #ffb86a 0, #ffb86a 10px, transparent 10px, transparent 15px)'}} />
-                    <div className='absolute left-0 right-0 bottom-[150px] h-px' style={{backgroundImage: 'repeating-linear-gradient(to right, #ffb86a 0, #ffb86a 10px, transparent 10px, transparent 15px)'}} />
+                    <div
+                      className='absolute left-0 right-0 bottom-[100px] h-px'
+                      style={{
+                        backgroundImage:
+                          'repeating-linear-gradient(to right, #ffb86a 0, #ffb86a 10px, transparent 10px, transparent 15px)',
+                      }}
+                    />
+                    <div
+                      className='absolute left-0 right-0 bottom-[150px] h-px'
+                      style={{
+                        backgroundImage:
+                          'repeating-linear-gradient(to right, #ffb86a 0, #ffb86a 10px, transparent 10px, transparent 15px)',
+                      }}
+                    />
                   </div>
                 </div>
 

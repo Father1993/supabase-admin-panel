@@ -130,7 +130,7 @@ export default function ProductsPage() {
         </div>
 
         {/* Статистика */}
-        <UserStatsPanel type="products" />
+        <UserStatsPanel type='products' />
 
         {/* Пагинация сверху */}
         {!loading && !selectedProduct && (

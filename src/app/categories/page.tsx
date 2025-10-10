@@ -130,9 +130,9 @@ export default function CategoriesPage() {
             searchCategories={searchCategories}
           />
         </div>
-        
+
         {/* Статистика */}
-        <UserStatsPanel type="categories" />
+        <UserStatsPanel type='categories' />
 
         {/* Пагинация сверху */}
         {!loading && !selectedCategory && (
