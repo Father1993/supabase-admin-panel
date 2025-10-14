@@ -40,7 +40,6 @@ export default function ApprovedCategoriesPage() {
     }
     const userEmail = user.email ?? null
     setCurrentUser(userEmail)
-
     // Загрузка списка email'ов для админов
     if (userEmail && ADMIN_EMAILS.includes(userEmail) && !emails.length) {
       const { data: emailData } = await supabase
@@ -52,7 +51,6 @@ export default function ApprovedCategoriesPage() {
         ...new Set(emailData?.map((d) => d.confirmed_by_email).filter(Boolean)),
       ] as string[]
       setEmails(uniqueEmails.sort())
-
       // Проверка наличия элементов без почты
       const { count } = await supabase
         .from('categories')
@@ -105,7 +103,6 @@ export default function ApprovedCategoriesPage() {
 
       <div className='max-w-7xl mx-auto px-6 py-8 space-y-6'>
         <UserStatsPanel type='categories' />
-
         {/* Фильтры и сортировка */}
         <div className='bg-white rounded-lg border p-4 grid grid-cols-1 md:grid-cols-2 gap-4'>
           <UserFilter
