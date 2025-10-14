@@ -162,10 +162,11 @@ export default function AdminImagesPage() {
                 <div className='border-1 border-orange-300 p-0 bg-gray-100 rounded-0 relative'>
                   {currentProduct.image_optimized_url && (
                     <Image
-                      width={imageSize.w}
-                      height={imageSize.h}
                       src={currentProduct.image_optimized_url}
                       alt={currentProduct.product_name || 'Изображение товара'}
+                      width={imageSize.w || 750}
+                      height={imageSize.h || 1000}
+                      unoptimized={true}
                       style={{
                         width: 'auto',
                         height: 'auto',
