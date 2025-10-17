@@ -25,6 +25,8 @@ function AdminImagesContent() {
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null)
   const [remainingToConfirm, setRemainingToConfirm] = useState(0)
   const [isChangingDecision, setIsChangingDecision] = useState(false)
+  const [sessionStartTime, setSessionStartTime] = useState<number>(Date.now())
+  const [timeUntilAfk, setTimeUntilAfk] = useState<number>(180) // 3 минуты в секундах
 
   const [imageSize, setImageSize] = useState<{ w: number; h: number }>({
     w: 750,
@@ -56,6 +58,23 @@ function AdminImagesContent() {
         .from('products')
         .update({
           locked_until: null,
+        })
+        .eq('id', productId)
+    },
+    [currentUserEmail]
+  )
+
+  const extendImageLock = useCallback(
+    async (productId: number) => {
+      if (!currentUserEmail) return
+
+      // Продлеваем блокировку на 3 минуты
+      const lockUntil = new Date(Date.now() + 3 * 60 * 1000).toISOString()
+
+      await supabase
+        .from('products')
+        .update({
+          locked_until: lockUntil,
         })
         .eq('id', productId)
     },
@@ -135,6 +154,24 @@ function AdminImagesContent() {
     }
   }, [products, currentIndex, currentUserEmail, lockImage])
 
+  // Блокируем картинку при переходе с списка (productId)
+  useEffect(() => {
+    if (productId && currentUserEmail && products.length > 0) {
+      const product = products[0]
+      if (product) {
+        const now = new Date()
+        const lockUntil = product.locked_until
+          ? new Date(product.locked_until)
+          : null
+
+        // Если картинка не заблокирована или блокировка истекла
+        if (!lockUntil || lockUntil < now) {
+          lockImage(Number(product.id))
+        }
+      }
+    }
+  }, [productId, currentUserEmail, products, lockImage])
+
   // Разблокируем картинку при закрытии страницы
   useEffect(() => {
     const handleBeforeUnload = () => {
@@ -157,6 +194,37 @@ function AdminImagesContent() {
       }
     }
   }, [products, currentIndex, currentUserEmail, unlockImage])
+
+  // AFK система - перенаправление через 3 минуты на странице
+  useEffect(() => {
+    const afkTimer = setInterval(() => {
+      const now = Date.now()
+      const timeOnPage = now - sessionStartTime
+      const afkThreshold = 3 * 60 * 1000 // 3 минуты
+
+      // Обновляем таймер обратного отсчета
+      const remainingSeconds = Math.max(
+        0,
+        Math.floor((afkThreshold - timeOnPage) / 1000)
+      )
+      setTimeUntilAfk(remainingSeconds)
+
+      if (timeOnPage > afkThreshold) {
+        // Разблокируем текущую картинку перед перенаправлением
+        if (products.length > 0 && currentUserEmail) {
+          const product = products[currentIndex]
+          if (product) {
+            unlockImage(Number(product.id))
+          }
+        }
+
+        // Перенаправляем на главную страницу
+        window.location.href = '/'
+      }
+    }, 1000) // Проверяем каждую секунду
+
+    return () => clearInterval(afkTimer)
+  }, [sessionStartTime, products, currentIndex, currentUserEmail, unlockImage])
 
   async function updateImageStatus(
     product: Row,
@@ -223,6 +291,55 @@ function AdminImagesContent() {
         title='Проверка изображений'
         subtitle='Подтверждение качества изображений товаров'
       />
+
+      {/* AFK индикатор в заголовке */}
+      {timeUntilAfk <= 60 && timeUntilAfk > 0 && (
+        <div className='max-w-7xl mx-auto px-4'>
+          <div
+            className={`text-center py-2 px-4 rounded-lg mb-4 ${
+              timeUntilAfk < 30
+                ? 'bg-red-50 border border-red-200'
+                : timeUntilAfk < 60
+                  ? 'bg-orange-50 border border-orange-200'
+                  : 'bg-yellow-50 border border-yellow-200'
+            }`}
+          >
+            <div className='flex items-center justify-center gap-3'>
+              <p
+                className={`text-sm font-medium ${
+                  timeUntilAfk < 30
+                    ? 'text-red-800'
+                    : timeUntilAfk < 60
+                      ? 'text-orange-800'
+                      : 'text-yellow-800'
+                }`}
+              >
+                ⚠️ Внимание! Вы будете автоматически перенаправлены через{' '}
+                {Math.floor(timeUntilAfk / 60)}:
+                {(timeUntilAfk % 60).toString().padStart(2, '0')} из-за
+                бездействия.
+              </p>
+              <button
+                onClick={async () => {
+                  setSessionStartTime(Date.now())
+                  if (currentProduct) {
+                    await extendImageLock(Number(currentProduct.id))
+                  }
+                }}
+                className={`px-3 py-1 text-xs font-medium rounded-full cursor-pointer transition-colors ${
+                  timeUntilAfk < 30
+                    ? 'bg-red-600 hover:bg-red-700 text-white'
+                    : timeUntilAfk < 60
+                      ? 'bg-orange-600 hover:bg-orange-700 text-white'
+                      : 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                }`}
+              >
+                Продлить время
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className=' px-6 py-8 '>
         {/* Информация о работе */}
