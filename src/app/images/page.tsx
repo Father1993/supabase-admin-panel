@@ -28,6 +28,8 @@ export default function ImagesPage() {
   const [emails, setEmails] = useState<string[]>([])
   const [selectedUser, setSelectedUser] = useState<string | null>(null)
   const [hasNoEmailItems, setHasNoEmailItems] = useState(false)
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [imageSize, setImageSize] = useState({ w: 0, h: 0 })
   const pageSize = 52
 
   const fetchProducts = useCallback(async () => {
@@ -139,6 +141,20 @@ export default function ImagesPage() {
     fetchProducts()
   }, [fetchProducts])
 
+  // Управление overflow body при открытии модального окна
+  useEffect(() => {
+    if (selectedImage) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+
+    // Cleanup при размонтировании компонента
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [selectedImage])
+
   return (
     <div className='min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50'>
       <Header
@@ -213,12 +229,34 @@ export default function ImagesPage() {
                 {/* Изображение */}
                 <div className='aspect-square relative bg-gray-100'>
                   {product.image_optimized_url ? (
-                    <Image
-                      fill
-                      src={product.image_optimized_url}
-                      alt={product.product_name || 'Изображение товара'}
-                      className='w-full h-full object-contain'
-                    />
+                    <>
+                      <Image
+                        fill
+                        src={product.image_optimized_url}
+                        alt={product.product_name || 'Изображение товара'}
+                        className='w-full h-full object-contain'
+                      />
+                      {/* Кнопка лупы */}
+                      <button
+                        onClick={() =>
+                          setSelectedImage(product.image_optimized_url || null)
+                        }
+                        className='absolute text-gray-600 top-2 left-2 bg-gray-300 bg-opacity-90 p-2 rounded-full shadow-md hover:bg-opacity-100 transition-all cursor-pointer'
+                        title='Увеличить изображение'
+                      >
+                        <svg
+                          width='20'
+                          height='20'
+                          viewBox='0 0 24 24'
+                          fill='none'
+                          stroke='currentColor'
+                          strokeWidth='2'
+                        >
+                          <circle cx='11' cy='11' r='8' />
+                          <path d='m21 21-4.35-4.35' />
+                        </svg>
+                      </button>
+                    </>
                   ) : (
                     <div className='w-full h-full flex items-center justify-center text-gray-400'>
                       <svg
@@ -330,6 +368,62 @@ export default function ImagesPage() {
           />
         )}
       </div>
+
+      {/* Модальное окно для увеличенного изображения */}
+      {selectedImage && (
+        <div
+          className='fixed inset-0 z-50 flex  items-center justify-center p-5 overflow-auto'
+          style={{
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            backdropFilter: 'blur(2px)',
+          }}
+          onClick={() => {
+            setSelectedImage(null)
+            setImageSize({ w: 0, h: 0 })
+          }}
+        >
+          <div className='relative mt-25' onClick={(e) => e.stopPropagation()}>
+            <Image
+              src={selectedImage}
+              alt='Увеличенное изображение'
+              width={imageSize.w || 750}
+              height={imageSize.h || 1000}
+              unoptimized={true}
+              style={{
+                width: 'auto',
+                height: 'auto',
+                maxWidth: 'none',
+              }}
+              onLoad={(e) => {
+                const img = e.currentTarget
+                setImageSize({
+                  w: img.naturalWidth,
+                  h: img.naturalHeight,
+                })
+              }}
+            />
+            <button
+              className='absolute top-0 right-[-100px] cursor-pointer text-white bg-black bg-opacity-50 rounded-full p-2 hover:bg-opacity-75'
+              onClick={() => {
+                setSelectedImage(null)
+                setImageSize({ w: 0, h: 0 })
+              }}
+            >
+              <svg
+                width='24'
+                height='24'
+                viewBox='0 0 24 24'
+                fill='none'
+                stroke='currentColor'
+                strokeWidth='2'
+              >
+                <line x1='18' y1='6' x2='6' y2='18' />
+                <line x1='6' y1='6' x2='18' y2='18' />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
