@@ -7,6 +7,7 @@ import { Header } from '@/components/Header'
 import { PaginationBar } from '@/components/PaginationBar'
 import { ChangeEvent } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { UserStatsPanel } from '@/components/UserStatsPanel'
 import { UserFilter } from '@/components/UserFilter'
 import { SortSelect } from '@/components/SortSelect'
@@ -28,6 +29,8 @@ export default function ImagesPage() {
   const [emails, setEmails] = useState<string[]>([])
   const [selectedUser, setSelectedUser] = useState<string | null>(null)
   const [hasNoEmailItems, setHasNoEmailItems] = useState(false)
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [imageSize, setImageSize] = useState({ w: 0, h: 0 })
   const pageSize = 52
 
   const fetchProducts = useCallback(async () => {
@@ -139,6 +142,20 @@ export default function ImagesPage() {
     fetchProducts()
   }, [fetchProducts])
 
+  // Управление overflow body при открытии модального окна
+  useEffect(() => {
+    if (selectedImage) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+
+    // Cleanup при размонтировании компонента
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [selectedImage])
+
   return (
     <div className='min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50'>
       <Header
@@ -208,24 +225,46 @@ export default function ImagesPage() {
             {products.map((product) => (
               <div
                 key={product.id}
-                className='bg-white rounded-lg shadow-md border border-slate-200 overflow-hidden hover:shadow-lg transition-shadow'
+                className='bg-white rounded-lg shadow-md border flex flex-col border-slate-200 overflow-hidden hover:shadow-lg transition-shadow'
               >
                 {/* Изображение */}
                 <div className='aspect-square relative bg-gray-100'>
                   {product.image_optimized_url ? (
-                    <Image
-                      fill
-                      src={product.image_optimized_url}
-                      alt={product.product_name || 'Изображение товара'}
-                      className='w-full h-full object-contain'
-                    />
+                    <>
+                      <Image
+                        fill
+                        src={product.image_optimized_url}
+                        alt={product.product_name || 'Изображение товара'}
+                        className='w-full h-full object-contain'
+                      />
+                      {/* Кнопка лупы */}
+                      <button
+                        onClick={() =>
+                          setSelectedImage(product.image_optimized_url || null)
+                        }
+                        className='absolute text-gray-600 top-2 left-1 bg-gray-300 bg-opacity-90 p-2 rounded-full shadow-md hover:bg-opacity-100 transition-all cursor-pointer'
+                        title='Увеличить изображение'
+                      >
+                        <svg
+                          width='12'
+                          height='12'
+                          viewBox='0 0 24 24'
+                          fill='none'
+                          stroke='currentColor'
+                          strokeWidth='2'
+                        >
+                          <circle cx='11' cy='11' r='8' />
+                          <path d='m21 21-4.35-4.35' />
+                        </svg>
+                      </button>
+                    </>
                   ) : (
                     <div className='w-full h-full flex items-center justify-center text-gray-400'>
                       <svg
                         xmlns='http://www.w3.org/2000/svg'
-                        width='48'
-                        height='48'
-                        viewBox='0 0 24 24'
+                        width='56'
+                        height='56'
+                        viewBox='0 0 30 30'
                         fill='none'
                         stroke='currentColor'
                         strokeWidth='2'
@@ -248,32 +287,49 @@ export default function ImagesPage() {
 
                   {/* Статус в углу */}
                   <div className='absolute top-2 right-2'>
-                    {product.image_status === 'approved' && (
-                      <span className='bg-green-500 text-white text-xs px-2 py-1 rounded-full'>
-                        ✓
-                      </span>
-                    )}
-                    {product.image_status === 'rejected' && (
-                      <span className='bg-red-500 text-white text-xs px-2 py-1 rounded-full'>
-                        ✗
-                      </span>
-                    )}
-                    {product.image_status === 'replace_later' && (
-                      <span className='bg-yellow-500 text-white text-xs px-2 py-1 rounded-full'>
-                        ⏱
-                      </span>
-                    )}
-                    {!product.image_status && (
-                      <span className='bg-gray-500 text-white text-xs px-2 py-1 rounded-full'>
-                        ?
-                      </span>
-                    )}
+                    {product.locked_until &&
+                      new Date(product.locked_until) > new Date() && (
+                        <span
+                          className='bg-orange-500 text-white text-xs px-2 py-1 rounded-full'
+                          title={`Заблокировано до: ${new Date(product.locked_until).toLocaleString()}`}
+                        >
+                          🔒
+                        </span>
+                      )}
+                    {(!product.locked_until ||
+                      new Date(product.locked_until) <= new Date()) &&
+                      product.image_status === 'approved' && (
+                        <span className='bg-green-500 text-white text-xs px-2 py-1 rounded-full'>
+                          ✓
+                        </span>
+                      )}
+                    {(!product.locked_until ||
+                      new Date(product.locked_until) <= new Date()) &&
+                      product.image_status === 'rejected' && (
+                        <span className='bg-red-500 text-white text-xs px-2 py-1 rounded-full'>
+                          ✗
+                        </span>
+                      )}
+                    {(!product.locked_until ||
+                      new Date(product.locked_until) <= new Date()) &&
+                      product.image_status === 'replace_later' && (
+                        <span className='bg-yellow-500 text-white text-xs px-2 py-1 rounded-full'>
+                          ⏱
+                        </span>
+                      )}
+                    {(!product.locked_until ||
+                      new Date(product.locked_until) <= new Date()) &&
+                      !product.image_status && (
+                        <span className='bg-gray-500 text-white text-xs px-2 py-1 rounded-full'>
+                          ?
+                        </span>
+                      )}
                   </div>
                 </div>
 
                 {/* Информация о товаре */}
-                <div className='p-3'>
-                  <h3 className='font-medium text-gray-900 text-sm line-clamp-2 mb-1'>
+                <div className='p-3 flex flex-start  h-full gap-2 flex-col'>
+                  <h3 className='font-medium text-gray-900 text-sm line-clamp-2 mb-1 flex-grow-1 '>
                     {product.product_name || 'Без названия'}
                   </h3>
                   <div className='space-y-1 text-xs text-gray-600'>
@@ -282,7 +338,7 @@ export default function ImagesPage() {
                   </div>
 
                   {/* Статус */}
-                  <div className='mt-2'>
+                  <div className='mt-2 mb-auto'>
                     {product.image_status === 'approved' && (
                       <div className='text-xs text-green-700'>
                         <span className='font-medium'>Подтверждено</span>
@@ -309,6 +365,24 @@ export default function ImagesPage() {
                       </span>
                     )}
                   </div>
+
+                  {/* Кнопка для открытия детальной страницы */}
+                  {product.locked_until &&
+                  new Date(product.locked_until) > new Date() ? (
+                    <div
+                      className='mt-3 w-full bg-gray-400 text-gray-200 text-sm py-2 px-3 rounded-md text-center cursor-not-allowed'
+                      title={`Заблокировано до: ${new Date(product.locked_until).toLocaleString()}`}
+                    >
+                      Заблокировано
+                    </div>
+                  ) : (
+                    <Link
+                      href={`/admin/images?productId=${product.id}`}
+                      className='mt-3 w-full bg-blue-600 text-center transition-colors hover:bg-blue-700 text-white text-sm py-2 px-3 rounded-md'
+                    >
+                      Открыть для проверки
+                    </Link>
+                  )}
                 </div>
               </div>
             ))}
@@ -330,6 +404,62 @@ export default function ImagesPage() {
           />
         )}
       </div>
+
+      {/* Модальное окно для увеличенного изображения */}
+      {selectedImage && (
+        <div
+          className='fixed inset-0 z-50 flex  items-center justify-center p-5 overflow-auto'
+          style={{
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            backdropFilter: 'blur(2px)',
+          }}
+          onClick={() => {
+            setSelectedImage(null)
+            setImageSize({ w: 0, h: 0 })
+          }}
+        >
+          <div className='relative mt-25' onClick={(e) => e.stopPropagation()}>
+            <Image
+              src={selectedImage}
+              alt='Увеличенное изображение'
+              width={imageSize.w || 750}
+              height={imageSize.h || 1000}
+              unoptimized={true}
+              style={{
+                width: 'auto',
+                height: 'auto',
+                maxWidth: 'none',
+              }}
+              onLoad={(e) => {
+                const img = e.currentTarget
+                setImageSize({
+                  w: img.naturalWidth,
+                  h: img.naturalHeight,
+                })
+              }}
+            />
+            <button
+              className='absolute top-0 right-[-100px] cursor-pointer text-white bg-black bg-opacity-50 rounded-full p-2 hover:bg-opacity-75'
+              onClick={() => {
+                setSelectedImage(null)
+                setImageSize({ w: 0, h: 0 })
+              }}
+            >
+              <svg
+                width='24'
+                height='24'
+                viewBox='0 0 24 24'
+                fill='none'
+                stroke='currentColor'
+                strokeWidth='2'
+              >
+                <line x1='18' y1='6' x2='6' y2='18' />
+                <line x1='6' y1='6' x2='18' y2='18' />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
