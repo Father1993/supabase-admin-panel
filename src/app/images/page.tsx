@@ -241,12 +241,12 @@ export default function ImagesPage() {
                         onClick={() =>
                           setSelectedImage(product.image_optimized_url || null)
                         }
-                        className='absolute text-gray-600 top-2 left-2 bg-gray-300 bg-opacity-90 p-2 rounded-full shadow-md hover:bg-opacity-100 transition-all cursor-pointer'
+                        className='absolute text-gray-600 top-2 left-1 bg-gray-300 bg-opacity-90 p-2 rounded-full shadow-md hover:bg-opacity-100 transition-all cursor-pointer'
                         title='Увеличить изображение'
                       >
                         <svg
-                          width='20'
-                          height='20'
+                          width='12'
+                          height='12'
                           viewBox='0 0 24 24'
                           fill='none'
                           stroke='currentColor'
@@ -261,9 +261,9 @@ export default function ImagesPage() {
                     <div className='w-full h-full flex items-center justify-center text-gray-400'>
                       <svg
                         xmlns='http://www.w3.org/2000/svg'
-                        width='48'
-                        height='48'
-                        viewBox='0 0 24 24'
+                        width='56'
+                        height='56'
+                        viewBox='0 0 30 30'
                         fill='none'
                         stroke='currentColor'
                         strokeWidth='2'
