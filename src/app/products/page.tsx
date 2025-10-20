@@ -9,7 +9,6 @@ import { PaginationBar } from '@/components/PaginationBar'
 import { ProductImage } from '@/components/ProductImage'
 import { ProductHeader } from '@/components/ProductHeader'
 import { ProductSearch } from '@/components/ProductSearch'
-import { UserStatsPanel } from '@/components/UserStatsPanel'
 import { UserFilter } from '@/components/UserFilter'
 import { SortSelect } from '@/components/SortSelect'
 import { LoadingSpinner, ErrorMessage } from '@/components/UIStates'
@@ -175,9 +174,6 @@ export default function ProductsPage() {
             searchProducts={searchProducts}
           />
         </div>
-
-        {/* Статистика */}
-        <UserStatsPanel type='products' />
 
         {/* Пагинация сверху */}
         {!loading && !selectedProduct && (
