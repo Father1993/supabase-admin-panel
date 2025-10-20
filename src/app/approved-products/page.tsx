@@ -12,6 +12,7 @@ import { UserFilter } from '@/components/UserFilter'
 import { SortSelect } from '@/components/SortSelect'
 import { LoadingSpinner, ErrorMessage, EmptyState } from '@/components/UIStates'
 import { ADMIN_EMAILS } from '@/config/admin'
+import { UserStatsPanel } from '@/components/UserStatsPanel'
 
 export default function ApprovedProductsPage() {
   const [products, setProducts] = useState<Row[]>([])
@@ -104,6 +105,8 @@ export default function ApprovedProductsPage() {
       />
 
       <div className='max-w-7xl mx-auto px-6 py-8 space-y-6'>
+        {/* Статистика */}
+        <UserStatsPanel type='products' />
         {/* Фильтры и сортировка */}
         <div className='bg-white rounded-lg border p-4 grid grid-cols-1 md:grid-cols-2 gap-4'>
           <UserFilter
