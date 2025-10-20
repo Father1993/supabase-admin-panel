@@ -30,7 +30,7 @@ export default function ProductsPage() {
 
   const handleSelectProduct = (product: Row | null) => {
     setSelectedProduct(product)
-    setPage(1) // Сбрасываем страницу
+    setPage(1)
   }
   const pageSize = 50
 
