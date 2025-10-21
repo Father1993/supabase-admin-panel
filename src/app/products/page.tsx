@@ -135,7 +135,6 @@ export default function ProductsPage() {
     } catch {
       setError('Ошибка загрузки данных')
     }
-
     setLoading(false)
   }
 
