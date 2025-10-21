@@ -141,7 +141,7 @@ export default function Home() {
                 </h3>
                 <ul className='text-slate-700 space-y-1 text-sm'>
                   <li>• Сотрудники контент-отдела</li>
-                  <li>• Менеджеры продуктов</li>
+                  <li>• Редакторы продуктов</li>
                   <li>• Редакторы описаний</li>
                 </ul>
               </div>
