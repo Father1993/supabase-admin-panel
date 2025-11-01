@@ -97,7 +97,7 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Категории */}
+            {/* Изображения */}
             <div className='bg-white rounded-xl shadow-lg border border-slate-200 p-6 flex-1 flex flex-col'>
               <h2 className='text-lg font-semibold text-slate-900 mb-4'>
                 📷 Изображения
@@ -123,6 +123,22 @@ export default function Home() {
                 >
                   <span>✅</span>
                   Подтверждённые изображения
+                </Link>
+              </div>
+            </div>
+
+            {/* Магазины */}
+            <div className='bg-white rounded-xl shadow-lg border border-slate-200 p-6 flex-1 flex flex-col'>
+              <h2 className='text-lg font-semibold text-slate-900 mb-4'>
+                🏪 Магазины
+              </h2>
+              <div className='space-y-3 flex-1 flex flex-col justify-start'>
+                <Link
+                  href='/vendors'
+                  className='flex items-center gap-2 px-5 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition w-full justify-center'
+                >
+                  <span>📋</span>
+                  Список магазинов
                 </Link>
               </div>
             </div>
