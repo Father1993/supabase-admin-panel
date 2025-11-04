@@ -119,10 +119,15 @@ export default function VendorsPage() {
   }
 
   async function handleSave(vendorId: string) {
-    const { error } = await supabase
-      .from('uroven_vendors')
-      .update(editedData)
-      .eq('id', vendorId)
+    const isNew = vendorId === 'new'
+    const { error } = isNew
+      ? await supabase
+          .from('uroven_vendors')
+          .insert(editedData)
+      : await supabase
+          .from('uroven_vendors')
+          .update(editedData)
+          .eq('id', vendorId)
 
     if (error) {
       setError(error.message)
@@ -130,12 +135,35 @@ export default function VendorsPage() {
       setEditingId(null)
       setEditedData({})
       fetchVendors()
+      fetchCities()
+    }
+  }
+
+  async function handleDelete(vendorId: string) {
+    if (!confirm('Удалить этот магазин?')) return
+
+    const { error } = await supabase
+      .from('uroven_vendors')
+      .delete()
+      .eq('id', vendorId)
+
+    if (error) {
+      setError(error.message)
+    } else {
+      fetchVendors()
+      fetchCities()
     }
   }
 
   function handleEdit(vendor: Vendor) {
     setEditingId(vendor.id)
     setEditedData({ ...vendor })
+  }
+
+  function handleCreate() {
+    setEditingId('new')
+    setEditedData({})
+    setSelectedVendor(null)
   }
 
   function handleCancel() {
@@ -151,6 +179,17 @@ export default function VendorsPage() {
       />
 
       <div className='max-w-7xl mx-auto px-4 py-6 space-y-4'>
+        {!selectedVendor && editingId !== 'new' && (
+          <div className='bg-white rounded-lg border p-4'>
+            <button
+              onClick={handleCreate}
+              className='flex items-center gap-2 px-5 py-3 rounded-lg bg-green-600 text-white hover:bg-green-700 transition font-medium'
+            >
+              <span>➕</span>
+              Создать новый магазин
+            </button>
+          </div>
+        )}
         {selectedVendor && (
           <div className='bg-white rounded-lg border p-4'>
             <div className='flex items-center justify-between'>
@@ -279,6 +318,325 @@ export default function VendorsPage() {
 
         {!loading && !error && (
           <div className='space-y-6'>
+            {editingId === 'new' && (
+              <div className='bg-white rounded-xl shadow-lg border-2 border-green-200 overflow-hidden'>
+                <div className='bg-green-50 px-6 py-4 border-b border-green-200'>
+                  <h3 className='text-lg font-semibold text-green-900'>
+                    ➕ Создание нового магазина
+                  </h3>
+                </div>
+                <div className='p-6'>
+                  <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+                    <div className='space-y-4'>
+                      <div>
+                        <label className='block text-sm font-medium text-gray-700 mb-1'>
+                          Название магазина
+                        </label>
+                        <div className='relative'>
+                          <IconWrapper field='vendor_name' />
+                          <input
+                            type='text'
+                            value={editedData.vendor_name ?? ''}
+                            onChange={(e) =>
+                              setEditedData({ ...editedData, vendor_name: e.target.value })
+                            }
+                            className='w-full pl-10 pr-3 py-2 border rounded-lg text-gray-900 bg-white'
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className='block text-sm font-medium text-gray-700 mb-1'>
+                          Владелец
+                        </label>
+                        <div className='relative'>
+                          <IconWrapper field='owner_name' />
+                          <input
+                            type='text'
+                            value={editedData.owner_name ?? ''}
+                            onChange={(e) =>
+                              setEditedData({ ...editedData, owner_name: e.target.value })
+                            }
+                            className='w-full pl-10 pr-3 py-2 border rounded-lg text-gray-900 bg-white'
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className='block text-sm font-medium text-gray-700 mb-1'>
+                          ИНН
+                        </label>
+                        <div className='relative'>
+                          <IconWrapper field='inn' />
+                          <input
+                            type='number'
+                            value={editedData.inn ?? ''}
+                            onChange={(e) =>
+                              setEditedData({
+                                ...editedData,
+                                inn: e.target.value ? Number(e.target.value) : null,
+                              })
+                            }
+                            className='w-full pl-10 pr-3 py-2 border rounded-lg text-gray-900 bg-white'
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className='block text-sm font-medium text-gray-700 mb-1'>
+                          Город
+                        </label>
+                        <div className='relative'>
+                          <IconWrapper field='city' />
+                          <input
+                            type='text'
+                            value={editedData.city ?? ''}
+                            onChange={(e) =>
+                              setEditedData({ ...editedData, city: e.target.value })
+                            }
+                            className='w-full pl-10 pr-3 py-2 border rounded-lg text-gray-900 bg-white'
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className='block text-sm font-medium text-gray-700 mb-1'>
+                          Адрес
+                        </label>
+                        <div className='relative'>
+                          <TextareaIcon field='address' />
+                          <textarea
+                            value={editedData.address ?? ''}
+                            onChange={(e) =>
+                              setEditedData({ ...editedData, address: e.target.value })
+                            }
+                            className='w-full pl-10 pr-3 py-2 border rounded-lg text-gray-900 bg-white'
+                            rows={2}
+                          />
+                        </div>
+                      </div>
+                      <div className='grid grid-cols-2 gap-4'>
+                        <div>
+                          <label className='block text-sm font-medium text-gray-700 mb-1'>
+                            Широта
+                          </label>
+                          <div className='relative'>
+                            <IconWrapper field='latitude' />
+                            <input
+                              type='number'
+                              step='any'
+                              value={editedData.latitude ?? ''}
+                              onChange={(e) =>
+                                setEditedData({
+                                  ...editedData,
+                                  latitude: e.target.value ? Number(e.target.value) : null,
+                                })
+                              }
+                              className='w-full pl-10 pr-3 py-2 border rounded-lg text-gray-900 bg-white'
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className='block text-sm font-medium text-gray-700 mb-1'>
+                            Долгота
+                          </label>
+                          <div className='relative'>
+                            <IconWrapper field='longitude' />
+                            <input
+                              type='number'
+                              step='any'
+                              value={editedData.longitude ?? ''}
+                              onChange={(e) =>
+                                setEditedData({
+                                  ...editedData,
+                                  longitude: e.target.value ? Number(e.target.value) : null,
+                                })
+                              }
+                              className='w-full pl-10 pr-3 py-2 border rounded-lg text-gray-900 bg-white'
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <label className='block text-sm font-medium text-gray-700 mb-1'>
+                          Склад 1С
+                        </label>
+                        <div className='relative'>
+                          <IconWrapper field='warehouse_1c' />
+                          <input
+                            type='text'
+                            value={editedData.warehouse_1c ?? ''}
+                            onChange={(e) =>
+                              setEditedData({ ...editedData, warehouse_1c: e.target.value })
+                            }
+                            className='w-full pl-10 pr-3 py-2 border rounded-lg text-gray-900 bg-white'
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className='block text-sm font-medium text-gray-700 mb-1'>
+                          Тип цены
+                        </label>
+                        <div className='relative'>
+                          <IconWrapper field='price_type' />
+                          <input
+                            type='text'
+                            value={editedData.price_type ?? ''}
+                            onChange={(e) =>
+                              setEditedData({ ...editedData, price_type: e.target.value })
+                            }
+                            className='w-full pl-10 pr-3 py-2 border rounded-lg text-gray-900 bg-white'
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className='space-y-4'>
+                      <div>
+                        <label className='block text-sm font-medium text-gray-700 mb-1'>
+                          Телефон
+                        </label>
+                        <div className='relative'>
+                          <IconWrapper field='phone' />
+                          <input
+                            type='text'
+                            value={editedData.phone ?? ''}
+                            onChange={(e) =>
+                              setEditedData({ ...editedData, phone: e.target.value })
+                            }
+                            className='w-full pl-10 pr-3 py-2 border rounded-lg text-gray-900 bg-white'
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className='block text-sm font-medium text-gray-700 mb-1'>
+                          WhatsApp
+                        </label>
+                        <div className='relative'>
+                          <IconWrapper field='whatsapp' />
+                          <input
+                            type='text'
+                            value={editedData.whatsapp ?? ''}
+                            onChange={(e) =>
+                              setEditedData({ ...editedData, whatsapp: e.target.value })
+                            }
+                            className='w-full pl-10 pr-3 py-2 border rounded-lg text-gray-900 bg-white'
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className='block text-sm font-medium text-gray-700 mb-1'>
+                          Telegram
+                        </label>
+                        <div className='relative'>
+                          <IconWrapper field='telegram' />
+                          <input
+                            type='text'
+                            value={editedData.telegram ?? ''}
+                            onChange={(e) =>
+                              setEditedData({ ...editedData, telegram: e.target.value })
+                            }
+                            className='w-full pl-10 pr-3 py-2 border rounded-lg text-gray-900 bg-white'
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className='block text-sm font-medium text-gray-700 mb-1'>
+                          Email
+                        </label>
+                        <div className='relative'>
+                          <IconWrapper field='email' />
+                          <input
+                            type='email'
+                            value={editedData.email ?? ''}
+                            onChange={(e) =>
+                              setEditedData({ ...editedData, email: e.target.value })
+                            }
+                            className='w-full pl-10 pr-3 py-2 border rounded-lg text-gray-900 bg-white'
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className='block text-sm font-medium text-gray-700 mb-1'>
+                          Юридический телефон
+                        </label>
+                        <div className='relative'>
+                          <IconWrapper field='juridical_phone' />
+                          <input
+                            type='text'
+                            value={editedData.juridical_phone ?? ''}
+                            onChange={(e) =>
+                              setEditedData({
+                                ...editedData,
+                                juridical_phone: e.target.value,
+                              })
+                            }
+                            className='w-full pl-10 pr-3 py-2 border rounded-lg text-gray-900 bg-white'
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className='block text-sm font-medium text-gray-700 mb-1'>
+                          График работы
+                        </label>
+                        <div className='relative'>
+                          <TextareaIcon field='schedule' />
+                          <textarea
+                            value={editedData.schedule ?? ''}
+                            onChange={(e) =>
+                              setEditedData({ ...editedData, schedule: e.target.value })
+                            }
+                            className='w-full pl-10 pr-3 py-2 border rounded-lg text-gray-900 bg-white'
+                            rows={2}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className='block text-sm font-medium text-gray-700 mb-1'>
+                          Ссылка OK
+                        </label>
+                        <div className='relative'>
+                          <IconWrapper field='ok_link' />
+                          <input
+                            type='url'
+                            value={editedData.ok_link ?? ''}
+                            onChange={(e) =>
+                              setEditedData({ ...editedData, ok_link: e.target.value })
+                            }
+                            className='w-full pl-10 pr-3 py-2 border rounded-lg text-gray-900 bg-white'
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className='block text-sm font-medium text-gray-700 mb-1'>
+                          Ссылка VK
+                        </label>
+                        <div className='relative'>
+                          <IconWrapper field='vk_link' />
+                          <input
+                            type='url'
+                            value={editedData.vk_link ?? ''}
+                            onChange={(e) =>
+                              setEditedData({ ...editedData, vk_link: e.target.value })
+                            }
+                            className='w-full pl-10 pr-3 py-2 border rounded-lg text-gray-900 bg-white'
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className='mt-6 flex justify-end gap-2'>
+                    <button
+                      onClick={handleCancel}
+                      className='px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300'
+                    >
+                      Отмена
+                    </button>
+                    <button
+                      onClick={() => handleSave('new')}
+                      className='px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700'
+                    >
+                      Создать
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
             {vendors.map((vendor) => {
               const isEditing = editingId === vendor.id
               const data = isEditing ? { ...vendor, ...editedData } : vendor
@@ -817,12 +1175,20 @@ export default function VendorsPage() {
                           </button>
                         </>
                       ) : (
-                        <button
-                          onClick={() => handleEdit(vendor)}
-                          className='px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700'
-                        >
-                          Редактировать
-                        </button>
+                        <>
+                          <button
+                            onClick={() => handleDelete(vendor.id)}
+                            className='px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700'
+                          >
+                            Удалить
+                          </button>
+                          <button
+                            onClick={() => handleEdit(vendor)}
+                            className='px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700'
+                          >
+                            Редактировать
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>
