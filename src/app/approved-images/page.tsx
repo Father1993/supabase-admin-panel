@@ -1,20 +1,17 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabaseClient'
-import { SafeHtml } from '@/components/SafeHtml'
 import { Row } from '@/types/products'
 import { Header } from '@/components/Header'
 import { PaginationBar } from '@/components/PaginationBar'
-import { ProductImage } from '@/components/ProductImage'
-import { ProductHeader } from '@/components/ProductHeader'
 import { UserFilter } from '@/components/UserFilter'
 import { SortSelect } from '@/components/SortSelect'
 import { LoadingSpinner, ErrorMessage, EmptyState } from '@/components/UIStates'
+import Image from 'next/image'
 import { ADMIN_EMAILS } from '@/config/admin'
-import { UserStatsPanel } from '@/components/UserStatsPanel'
 
-export default function ApprovedProductsPage() {
+export default function ApprovedImagesPage() {
   const [products, setProducts] = useState<Row[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -27,11 +24,7 @@ export default function ApprovedProductsPage() {
   const [hasNoEmailItems, setHasNoEmailItems] = useState(false)
   const pageSize = 50
 
-  useEffect(() => {
-    fetchProducts()
-  }, [page, sortOrder, selectedUser]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  async function fetchProducts() {
+  const fetchProducts = useCallback(async () => {
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -46,11 +39,13 @@ export default function ApprovedProductsPage() {
     if (userEmail && ADMIN_EMAILS.includes(userEmail) && !emails.length) {
       const { data: emailData } = await supabase
         .from('products')
-        .select('confirmed_by_email')
-        .eq('description_confirmed', true)
-        .not('confirmed_by_email', 'is', null)
+        .select('image_confirmed_by_email')
+        .eq('image_status', 'approved')
+        .not('image_confirmed_by_email', 'is', null)
       const uniqueEmails = [
-        ...new Set(emailData?.map((d) => d.confirmed_by_email).filter(Boolean)),
+        ...new Set(
+          emailData?.map((d) => d.image_confirmed_by_email).filter(Boolean)
+        ),
       ] as string[]
       setEmails(uniqueEmails.sort())
 
@@ -58,25 +53,24 @@ export default function ApprovedProductsPage() {
       const { count } = await supabase
         .from('products')
         .select('id', { count: 'exact', head: true })
-        .eq('description_confirmed', true)
-        .is('confirmed_by_email', null)
+        .eq('image_status', 'approved')
+        .is('image_confirmed_by_email', null)
       setHasNoEmailItems((count ?? 0) > 0)
     }
 
     setLoading(true)
     setError(null)
-
     try {
       let query = supabase
         .from('products')
         .select('*', { count: 'exact' })
-        .eq('description_confirmed', true)
+        .eq('image_status', 'approved')
 
       if (selectedUser === '__no_email__') {
-        query = query.is('confirmed_by_email', null)
+        query = query.is('image_confirmed_by_email', null)
       } else {
         const filterEmail = selectedUser || user.email
-        query = query.eq('confirmed_by_email', filterEmail)
+        query = query.eq('image_confirmed_by_email', filterEmail)
       }
 
       query = query
@@ -95,18 +89,20 @@ export default function ApprovedProductsPage() {
       setError('Ошибка загрузки данных')
     }
     setLoading(false)
-  }
+  }, [page, sortOrder, selectedUser]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    fetchProducts()
+  }, [fetchProducts])
 
   return (
     <div className='min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50'>
       <Header
-        title='Подтвержденные товары'
-        subtitle={`Товары, подтвержденные вами (${currentUser || ''})`}
+        title='Подтвержденные изображения'
+        subtitle={`Изображения, подтвержденные вами (${currentUser || ''})`}
       />
 
       <div className='max-w-7xl mx-auto px-6 py-8 space-y-6'>
-        {/* Статистика */}
-        <UserStatsPanel type='products' />
         {/* Фильтры и сортировка */}
         <div className='bg-white rounded-lg border p-4 grid grid-cols-1 md:grid-cols-2 gap-4'>
           <UserFilter
@@ -135,73 +131,77 @@ export default function ApprovedProductsPage() {
         {loading && <LoadingSpinner />}
         {error && <ErrorMessage error={error} />}
         {!loading && !error && products.length === 0 && (
-          <EmptyState message='У вас пока нет подтвержденных товаров.' />
+          <EmptyState message='У вас пока нет подтвержденных изображений.' />
         )}
 
         {/* Список товаров */}
         {!loading && !error && products.length > 0 && (
-          <div className='space-y-6'>
+          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
             {products.map((product) => (
               <div
                 key={product.id}
-                className='bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden'
+                className='bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden hover:shadow-xl transition-shadow'
               >
-                {/* Заголовок */}
-                <ProductHeader
-                  product={product}
-                  additionalBadges={[
-                    <span
-                      key='confirmed'
-                      className='bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-medium'
-                    >
-                      ✓ Подтверждено вами
-                    </span>,
-                  ]}
-                />
-
-                {/* Изображение и описания */}
-                <div className='p-6'>
-                  <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
-                    {/* Левая колонка: изображение + краткое описание */}
-                    <div className='space-y-6'>
-                      {/* Изображение товара */}
-                      <ProductImage
-                        imageUrl={product.image_optimized_url}
-                        productName={product.product_name}
-                      />
-
-                      {/* Краткое описание */}
-                      {product.short_description && (
-                        <div className='space-y-3'>
-                          <h4 className='text-lg font-semibold text-slate-800 flex items-center gap-2'>
-                            <div className='w-1 h-5 bg-amber-400 rounded-full'></div>
-                            Краткое описание
-                          </h4>
-                          <div className='bg-amber-50 border border-amber-200 rounded-lg p-4'>
-                            <SafeHtml
-                              html={product.short_description}
-                              className='rich-html rich-html-compact'
-                            />
-                          </div>
-                        </div>
-                      )}
+                {/* Изображение */}
+                <div className='aspect-square relative bg-gray-100'>
+                  {product.image_optimized_url ? (
+                    <Image
+                      fill
+                      src={product.image_optimized_url}
+                      alt={product.product_name || 'Изображение товара'}
+                      className='w-full h-full object-contain'
+                    />
+                  ) : (
+                    <div className='w-full h-full flex items-center justify-center text-gray-400'>
+                      <svg
+                        xmlns='http://www.w3.org/2000/svg'
+                        width='48'
+                        height='48'
+                        viewBox='0 0 24 24'
+                        fill='none'
+                        stroke='currentColor'
+                        strokeWidth='2'
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
+                      >
+                        <rect
+                          x='3'
+                          y='3'
+                          width='18'
+                          height='18'
+                          rx='2'
+                          ry='2'
+                        ></rect>
+                        <circle cx='8.5' cy='8.5' r='1.5'></circle>
+                        <polyline points='21 15 16 10 5 21'></polyline>
+                      </svg>
                     </div>
+                  )}
+                </div>
 
-                    {/* Правая колонка: полное описание */}
-                    {product.description && (
-                      <div className='space-y-3'>
-                        <h4 className='text-lg font-semibold text-slate-800 flex items-center gap-2'>
-                          <div className='w-1 h-5 bg-emerald-400 rounded-full'></div>
-                          Полное описание
-                        </h4>
-                        <div className='bg-emerald-50 border border-emerald-200 rounded-lg p-4'>
-                          <SafeHtml
-                            html={product.description}
-                            className='rich-html rich-html-detailed'
-                          />
-                        </div>
-                      </div>
+                {/* Информация о товаре */}
+                <div className='p-4'>
+                  <h3 className='font-semibold text-gray-900 mb-2 line-clamp-2'>
+                    {product.product_name || 'Без названия'}
+                  </h3>
+                  <div className='space-y-1 text-sm text-gray-600'>
+                    {product.article && (
+                      <p>
+                        Артикул:{' '}
+                        <span className='font-medium'>{product.article}</span>
+                      </p>
                     )}
+                    {product.code_1c && (
+                      <p>
+                        Код 1С:{' '}
+                        <span className='font-medium'>{product.code_1c}</span>
+                      </p>
+                    )}
+                  </div>
+                  <div className='mt-3'>
+                    <span className='inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800'>
+                      ✓ Подтверждено вами
+                    </span>
                   </div>
                 </div>
               </div>

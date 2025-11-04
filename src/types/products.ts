@@ -1,19 +1,24 @@
 export type Row = {
-    id: string | number
-    uid?: string | null
-    product_name?: string | null
-    article?: string | null
-    code_1c?: string | null
-    short_description?: string | null
-    description?: string | null
-    description_added?: boolean | null
-    push_to_pim?: boolean | null
-    description_confirmed?: boolean | null
-    confirmed_by_email?: string | null
-    created_at?: string | null
-    updated_at?: string | null
-    locked_until?: string | null
-    link_pim?: string
-    image_url?: string | null
-    is_rejected?: boolean | null
+  id: string | number
+  uid?: string | null
+  product_name?: string | null
+  article?: string | null
+  code_1c?: string | null
+  short_description?: string | null
+  description?: string | null
+  description_added?: boolean | null
+  push_to_pim?: boolean | null
+  description_confirmed?: boolean | null
+  confirmed_by_email?: string | null
+  created_at?: string | null
+  updated_at?: string | null
+  locked_until?: string | null
+  link_pim?: string
+  image_url?: string | null
+  image_optimized_url?: string | null
+  is_rejected?: boolean | null
+  image_confirmed?: boolean | null
+  image_confirmed_by_email?: string | null
+  image_rejected?: boolean | null
+  image_status?: 'approved' | 'rejected' | 'replace_later' | null
 }

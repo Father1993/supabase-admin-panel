@@ -1,26 +1,31 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Row } from '@/types/products'
-import { ProductSearchProps } from '@/types/main'
+import { Vendor } from '@/types/vendors'
 
-export function ProductSearch({
-  onSelectProduct,
-  selectedProduct,
-  searchProducts,
-}: ProductSearchProps) {
+type Props = {
+  onSelectVendor: (vendor: Vendor | null) => void
+  selectedVendor: Vendor | null
+  searchVendors: (query: string) => Promise<Vendor[]>
+}
+
+export function VendorSearch({
+  onSelectVendor,
+  selectedVendor,
+  searchVendors,
+}: Props) {
   const [query, setQuery] = useState('')
-  const [results, setResults] = useState<Row[]>([])
+  const [results, setResults] = useState<Vendor[]>([])
   const [isOpen, setIsOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (selectedProduct) {
-      setQuery(selectedProduct.product_name || `ID: ${selectedProduct.id}`)
+    if (selectedVendor) {
+      setQuery(selectedVendor.vendor_name || `ID: ${selectedVendor.id}`)
       setIsOpen(false)
     }
-  }, [selectedProduct])
+  }, [selectedVendor])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -45,9 +50,9 @@ export function ProductSearch({
 
     setLoading(true)
     try {
-      const products = await searchProducts(value.trim())
-      setResults(products)
-      setIsOpen(products.length > 0)
+      const vendors = await searchVendors(value.trim())
+      setResults(vendors)
+      setIsOpen(vendors.length > 0)
     } catch (error) {
       console.error('Search error:', error)
       setResults([])
@@ -56,8 +61,8 @@ export function ProductSearch({
     setLoading(false)
   }
 
-  const handleSelectProduct = (product: Row) => {
-    onSelectProduct(product)
+  const handleSelectVendor = (vendor: Vendor) => {
+    onSelectVendor(vendor)
     setIsOpen(false)
   }
 
@@ -65,7 +70,7 @@ export function ProductSearch({
     setQuery('')
     setResults([])
     setIsOpen(false)
-    onSelectProduct(null)
+    onSelectVendor(null)
   }
 
   return (
@@ -78,7 +83,7 @@ export function ProductSearch({
           onFocus={() =>
             query.length >= 2 && results.length > 0 && setIsOpen(true)
           }
-          placeholder='Поиск по названию, ID или коду 1С...'
+          placeholder='Поиск по названию магазина или ID...'
           className='w-full px-4 py-3 pl-12 pr-12 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white'
         />
         <svg
@@ -93,7 +98,7 @@ export function ProductSearch({
           <circle cx='11' cy='11' r='8'></circle>
           <path d='m21 21-4.35-4.35'></path>
         </svg>
-        {(query || selectedProduct) && (
+        {(query || selectedVendor) && (
           <button
             onClick={handleClear}
             className='absolute right-4 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600'
@@ -120,19 +125,21 @@ export function ProductSearch({
 
       {isOpen && results.length > 0 && (
         <div className='absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-80 overflow-y-auto'>
-          {results.map((product) => (
+          {results.map((vendor) => (
             <button
-              key={product.id}
-              onClick={() => handleSelectProduct(product)}
+              key={vendor.id}
+              onClick={() => handleSelectVendor(vendor)}
               className='w-full px-4 py-3 text-left hover:bg-slate-50 border-b border-slate-100 last:border-b-0 focus:bg-slate-50 focus:outline-none'
             >
               <div className='font-medium text-slate-900'>
-                {product.product_name || 'Без названия'}
+                {vendor.vendor_name || 'Без названия'}
               </div>
               <div className='text-sm text-slate-500 flex gap-4 mt-1'>
-                <span>ID: {product.id}</span>
-                {product.article && <span>Артикул: {product.article}</span>}
-                {product.code_1c && <span>Код 1С: {product.code_1c}</span>}
+                <span>ID: {vendor.id}</span>
+                {vendor.city && <span>Город: {vendor.city}</span>}
+                {vendor.owner_name && (
+                  <span>Владелец: {vendor.owner_name}</span>
+                )}
               </div>
             </button>
           ))}

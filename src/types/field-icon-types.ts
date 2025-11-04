@@ -1,0 +1,13 @@
+export type IconType =
+  | 'store'
+  | 'user'
+  | 'document'
+  | 'location'
+  | 'compass'
+  | 'phone'
+  | 'whatsapp'
+  | 'telegram'
+  | 'email'
+  | 'clock'
+  | 'link'
+  | 'currency'
