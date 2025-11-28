@@ -41,6 +41,7 @@ export default function VendorsPage() {
   const [error, setError] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
+  const [remainingToConfirm, setRemainingToConfirm] = useState(0)
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editedData, setEditedData] = useState<Partial<Vendor>>({})
@@ -112,6 +113,14 @@ export default function VendorsPage() {
         setVendors(data || [])
         setTotal(count || 0)
       }
+
+      // Подсчитываем товары для подтверждения изображений
+      const { count: remainingCount } = await supabase
+        .from('products')
+        .select('id', { count: 'exact', head: true })
+        .is('image_status', null)
+        .not('image_optimized_url', 'is', null)
+      setRemainingToConfirm(remainingCount ?? 0)
     } catch {
       setError('Ошибка загрузки данных')
     }
@@ -308,6 +317,7 @@ export default function VendorsPage() {
             total={total}
             pageSize={pageSize}
             onPageChange={setPage}
+            remainingToConfirm={remainingToConfirm}
           />
         )}
 
@@ -1247,6 +1257,7 @@ export default function VendorsPage() {
             total={total}
             pageSize={pageSize}
             onPageChange={setPage}
+            remainingToConfirm={remainingToConfirm}
           />
         )}
       </div>

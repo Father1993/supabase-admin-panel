@@ -19,6 +19,7 @@ export default function ApprovedCategoriesPage() {
   const [error, setError] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
+  const [remainingToConfirm, setRemainingToConfirm] = useState(0)
   const [currentUser, setCurrentUser] = useState<string | null>(null)
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc')
   const [emails, setEmails] = useState<string[]>([])
@@ -88,6 +89,14 @@ export default function ApprovedCategoriesPage() {
         setCategories(data || [])
         setTotal(count || 0)
       }
+
+      // Подсчитываем категории для подтверждения
+      const { count: remainingCount } = await supabase
+        .from('categories')
+        .select('id', { count: 'exact', head: true })
+        .eq('description_added', true)
+        .eq('description_confirmed', false)
+      setRemainingToConfirm(remainingCount ?? 0)
     } catch {
       setError('Ошибка загрузки данных')
     }
@@ -125,6 +134,7 @@ export default function ApprovedCategoriesPage() {
             total={total}
             pageSize={pageSize}
             onPageChange={setPage}
+            remainingToConfirm={remainingToConfirm}
           />
         )}
 
@@ -188,6 +198,7 @@ export default function ApprovedCategoriesPage() {
             total={total}
             pageSize={pageSize}
             onPageChange={setPage}
+            remainingToConfirm={remainingToConfirm}
           />
         )}
       </div>

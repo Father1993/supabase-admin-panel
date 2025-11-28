@@ -261,6 +261,9 @@ function AdminImagesContent() {
     // Разблокируем картинку
     await unlockImage(Number(product.id))
 
+    // Сбрасываем таймер AFK при действии пользователя
+    setSessionStartTime(Date.now())
+
     // Сбрасываем состояние изменения решения
     setIsChangingDecision(false)
 
