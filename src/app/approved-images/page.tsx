@@ -17,6 +17,7 @@ export default function ApprovedImagesPage() {
   const [error, setError] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
+  const [remainingToConfirm, setRemainingToConfirm] = useState(0)
   const [currentUser, setCurrentUser] = useState<string | null>(null)
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc')
   const [emails, setEmails] = useState<string[]>([])
@@ -85,6 +86,14 @@ export default function ApprovedImagesPage() {
         setProducts(data || [])
         setTotal(count || 0)
       }
+
+      // Подсчитываем товары для подтверждения
+      const { count: remainingCount } = await supabase
+        .from('products')
+        .select('id', { count: 'exact', head: true })
+        .is('image_status', null)
+        .not('image_optimized_url', 'is', null)
+      setRemainingToConfirm(remainingCount ?? 0)
     } catch {
       setError('Ошибка загрузки данных')
     }
@@ -125,6 +134,7 @@ export default function ApprovedImagesPage() {
             total={total}
             pageSize={pageSize}
             onPageChange={setPage}
+            remainingToConfirm={remainingToConfirm}
           />
         )}
 
@@ -216,6 +226,7 @@ export default function ApprovedImagesPage() {
             total={total}
             pageSize={pageSize}
             onPageChange={setPage}
+            remainingToConfirm={remainingToConfirm}
           />
         )}
       </div>
