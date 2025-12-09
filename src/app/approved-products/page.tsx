@@ -99,6 +99,8 @@ export default function ApprovedProductsPage() {
         .select('id', { count: 'exact', head: true })
         .eq('description_added', true)
         .eq('description_confirmed', false)
+        .eq('is_rejected', false)
+        .eq('is_new_product', false)
       setRemainingToConfirm(remainingCount ?? 0)
     } catch {
       setError('Ошибка загрузки данных')
