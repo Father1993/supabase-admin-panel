@@ -59,7 +59,6 @@ export default function AdminPage() {
           .eq('description_added', true)
           .eq('description_confirmed', false)
           .eq('is_rejected', false)
-          .eq('is_new_product', false)
           .or(
             'locked_until.is.null,locked_until.lt.' + new Date().toISOString()
           )
