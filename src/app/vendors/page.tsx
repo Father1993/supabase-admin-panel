@@ -41,6 +41,7 @@ export default function VendorsPage() {
   const [error, setError] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
+  const [remainingToConfirm, setRemainingToConfirm] = useState(0)
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editedData, setEditedData] = useState<Partial<Vendor>>({})
@@ -112,6 +113,14 @@ export default function VendorsPage() {
         setVendors(data || [])
         setTotal(count || 0)
       }
+
+      // Подсчитываем товары для подтверждения изображений
+      const { count: remainingCount } = await supabase
+        .from('products')
+        .select('id', { count: 'exact', head: true })
+        .is('image_status', null)
+        .not('image_optimized_url', 'is', null)
+      setRemainingToConfirm(remainingCount ?? 0)
     } catch {
       setError('Ошибка загрузки данных')
     }
@@ -121,9 +130,7 @@ export default function VendorsPage() {
   async function handleSave(vendorId: string) {
     const isNew = vendorId === 'new'
     const { error } = isNew
-      ? await supabase
-          .from('uroven_vendors')
-          .insert(editedData)
+      ? await supabase.from('uroven_vendors').insert(editedData)
       : await supabase
           .from('uroven_vendors')
           .update(editedData)
@@ -310,6 +317,7 @@ export default function VendorsPage() {
             total={total}
             pageSize={pageSize}
             onPageChange={setPage}
+            remainingToConfirm={remainingToConfirm}
           />
         )}
 
@@ -338,7 +346,10 @@ export default function VendorsPage() {
                             type='text'
                             value={editedData.vendor_name ?? ''}
                             onChange={(e) =>
-                              setEditedData({ ...editedData, vendor_name: e.target.value })
+                              setEditedData({
+                                ...editedData,
+                                vendor_name: e.target.value,
+                              })
                             }
                             className='w-full pl-10 pr-3 py-2 border rounded-lg text-gray-900 bg-white'
                           />
@@ -354,7 +365,10 @@ export default function VendorsPage() {
                             type='text'
                             value={editedData.owner_name ?? ''}
                             onChange={(e) =>
-                              setEditedData({ ...editedData, owner_name: e.target.value })
+                              setEditedData({
+                                ...editedData,
+                                owner_name: e.target.value,
+                              })
                             }
                             className='w-full pl-10 pr-3 py-2 border rounded-lg text-gray-900 bg-white'
                           />
@@ -372,7 +386,9 @@ export default function VendorsPage() {
                             onChange={(e) =>
                               setEditedData({
                                 ...editedData,
-                                inn: e.target.value ? Number(e.target.value) : null,
+                                inn: e.target.value
+                                  ? Number(e.target.value)
+                                  : null,
                               })
                             }
                             className='w-full pl-10 pr-3 py-2 border rounded-lg text-gray-900 bg-white'
@@ -389,7 +405,10 @@ export default function VendorsPage() {
                             type='text'
                             value={editedData.city ?? ''}
                             onChange={(e) =>
-                              setEditedData({ ...editedData, city: e.target.value })
+                              setEditedData({
+                                ...editedData,
+                                city: e.target.value,
+                              })
                             }
                             className='w-full pl-10 pr-3 py-2 border rounded-lg text-gray-900 bg-white'
                           />
@@ -404,7 +423,10 @@ export default function VendorsPage() {
                           <textarea
                             value={editedData.address ?? ''}
                             onChange={(e) =>
-                              setEditedData({ ...editedData, address: e.target.value })
+                              setEditedData({
+                                ...editedData,
+                                address: e.target.value,
+                              })
                             }
                             className='w-full pl-10 pr-3 py-2 border rounded-lg text-gray-900 bg-white'
                             rows={2}
@@ -425,7 +447,9 @@ export default function VendorsPage() {
                               onChange={(e) =>
                                 setEditedData({
                                   ...editedData,
-                                  latitude: e.target.value ? Number(e.target.value) : null,
+                                  latitude: e.target.value
+                                    ? Number(e.target.value)
+                                    : null,
                                 })
                               }
                               className='w-full pl-10 pr-3 py-2 border rounded-lg text-gray-900 bg-white'
@@ -445,7 +469,9 @@ export default function VendorsPage() {
                               onChange={(e) =>
                                 setEditedData({
                                   ...editedData,
-                                  longitude: e.target.value ? Number(e.target.value) : null,
+                                  longitude: e.target.value
+                                    ? Number(e.target.value)
+                                    : null,
                                 })
                               }
                               className='w-full pl-10 pr-3 py-2 border rounded-lg text-gray-900 bg-white'
@@ -463,7 +489,10 @@ export default function VendorsPage() {
                             type='text'
                             value={editedData.warehouse_1c ?? ''}
                             onChange={(e) =>
-                              setEditedData({ ...editedData, warehouse_1c: e.target.value })
+                              setEditedData({
+                                ...editedData,
+                                warehouse_1c: e.target.value,
+                              })
                             }
                             className='w-full pl-10 pr-3 py-2 border rounded-lg text-gray-900 bg-white'
                           />
@@ -479,7 +508,10 @@ export default function VendorsPage() {
                             type='text'
                             value={editedData.price_type ?? ''}
                             onChange={(e) =>
-                              setEditedData({ ...editedData, price_type: e.target.value })
+                              setEditedData({
+                                ...editedData,
+                                price_type: e.target.value,
+                              })
                             }
                             className='w-full pl-10 pr-3 py-2 border rounded-lg text-gray-900 bg-white'
                           />
@@ -497,7 +529,10 @@ export default function VendorsPage() {
                             type='text'
                             value={editedData.phone ?? ''}
                             onChange={(e) =>
-                              setEditedData({ ...editedData, phone: e.target.value })
+                              setEditedData({
+                                ...editedData,
+                                phone: e.target.value,
+                              })
                             }
                             className='w-full pl-10 pr-3 py-2 border rounded-lg text-gray-900 bg-white'
                           />
@@ -513,7 +548,10 @@ export default function VendorsPage() {
                             type='text'
                             value={editedData.whatsapp ?? ''}
                             onChange={(e) =>
-                              setEditedData({ ...editedData, whatsapp: e.target.value })
+                              setEditedData({
+                                ...editedData,
+                                whatsapp: e.target.value,
+                              })
                             }
                             className='w-full pl-10 pr-3 py-2 border rounded-lg text-gray-900 bg-white'
                           />
@@ -529,7 +567,10 @@ export default function VendorsPage() {
                             type='text'
                             value={editedData.telegram ?? ''}
                             onChange={(e) =>
-                              setEditedData({ ...editedData, telegram: e.target.value })
+                              setEditedData({
+                                ...editedData,
+                                telegram: e.target.value,
+                              })
                             }
                             className='w-full pl-10 pr-3 py-2 border rounded-lg text-gray-900 bg-white'
                           />
@@ -545,7 +586,10 @@ export default function VendorsPage() {
                             type='email'
                             value={editedData.email ?? ''}
                             onChange={(e) =>
-                              setEditedData({ ...editedData, email: e.target.value })
+                              setEditedData({
+                                ...editedData,
+                                email: e.target.value,
+                              })
                             }
                             className='w-full pl-10 pr-3 py-2 border rounded-lg text-gray-900 bg-white'
                           />
@@ -579,7 +623,10 @@ export default function VendorsPage() {
                           <textarea
                             value={editedData.schedule ?? ''}
                             onChange={(e) =>
-                              setEditedData({ ...editedData, schedule: e.target.value })
+                              setEditedData({
+                                ...editedData,
+                                schedule: e.target.value,
+                              })
                             }
                             className='w-full pl-10 pr-3 py-2 border rounded-lg text-gray-900 bg-white'
                             rows={2}
@@ -596,7 +643,10 @@ export default function VendorsPage() {
                             type='url'
                             value={editedData.ok_link ?? ''}
                             onChange={(e) =>
-                              setEditedData({ ...editedData, ok_link: e.target.value })
+                              setEditedData({
+                                ...editedData,
+                                ok_link: e.target.value,
+                              })
                             }
                             className='w-full pl-10 pr-3 py-2 border rounded-lg text-gray-900 bg-white'
                           />
@@ -612,7 +662,10 @@ export default function VendorsPage() {
                             type='url'
                             value={editedData.vk_link ?? ''}
                             onChange={(e) =>
-                              setEditedData({ ...editedData, vk_link: e.target.value })
+                              setEditedData({
+                                ...editedData,
+                                vk_link: e.target.value,
+                              })
                             }
                             className='w-full pl-10 pr-3 py-2 border rounded-lg text-gray-900 bg-white'
                           />
@@ -1204,6 +1257,7 @@ export default function VendorsPage() {
             total={total}
             pageSize={pageSize}
             onPageChange={setPage}
+            remainingToConfirm={remainingToConfirm}
           />
         )}
       </div>

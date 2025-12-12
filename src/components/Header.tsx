@@ -162,7 +162,7 @@ export function Header({
               menuOpen
                 ? 'flex max-h-[400px] opacity-100'
                 : 'max-h-0 opacity-0 md:max-h-[400px] md:opacity-100'
-            } md:flex flex-col md:flex-row md:items-center gap-2 w-full md:w-auto md:overflow-visible overflow-hidden transition-all duration-300`}
+            } md:flex flex-col md:flex-row md:items-center gap-2 w-full md:w-auto overflow-visible transition-all duration-300`}
           >
             {/* На главную */}
             <Link
