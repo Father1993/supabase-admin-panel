@@ -131,7 +131,6 @@ export default function ProductsPage() {
           .eq('description_added', true)
           .eq('description_confirmed', false)
           .eq('is_rejected', false)
-          .eq('is_new_product', false)
         setRemainingToConfirm(remainingCount ?? 0)
       }
     } catch {
